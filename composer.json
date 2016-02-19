@@ -1,0 +1,23 @@
+{
+  "name": "helmich/mongomock",
+  "description": "Library containing highly intelligent MongoDB mocks for unit testing",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Martin Helmich",
+      "email": "kontakt@martin-helmich.de"
+    }
+  ],
+  "require": {
+    "php": ">=7.0.0",
+    "ext-mongodb": "*",
+    "mongodb/mongodb": "^1.0",
+    "phpunit/phpunit": "^5.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "Helmich\\MongoMock\\": "src"
+    }
+  }
+}
