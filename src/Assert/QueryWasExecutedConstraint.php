@@ -26,9 +26,10 @@ class QueryWasExecutedConstraint extends \PHPUnit_Framework_Constraint
             return false;
         }
 
-        $ref = new Query($this->filter, $this->options);
+        $constraint = \PHPUnit_Framework_Assert::equalTo(new Query($this->filter, $this->options));
+
         foreach ($other->queries as $query) {
-            if ($query == $ref) {
+            if ($constraint->evaluate($query, '', true)) {
                 return true;
             }
         }
