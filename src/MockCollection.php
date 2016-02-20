@@ -1,26 +1,48 @@
 <?php
 namespace Helmich\MongoMock;
 
+use Helmich\MongoMock\Log\Index;
+use Helmich\MongoMock\Log\Query;
+use MongoDB\BSON\Binary;
+use MongoDB\BSON\ObjectID;
 use MongoDB\Collection;
 use MongoDB\Model\BSONDocument;
 
 class MockCollection extends Collection
 {
     public $queries = [];
-
     public $documents = [];
     public $indices = [];
+    public $dropped = false;
 
     /** @noinspection PhpMissingParentConstructorInspection */
     public function __construct()
     {
-
     }
 
     public function insertOne($document, array $options = [])
     {
+        if (!isset($document['_id'])) {
+            $document['_id'] = new ObjectID();
+        }
+
+        if (!$document instanceof BSONDocument) {
+            $document = new BSONDocument($document);
+        }
+
         $document = new BSONDocument($document);
         $this->documents[] = $document;
+
+        return new MockInsertOneResult($document['_id']);
+    }
+
+    public function insertMany(array $documents, array $options = [])
+    {
+        $insertedIds = array_map(function($doc) use ($options) {
+            return $this->insertOne($doc, $options)->getInsertedId();
+        }, $documents);
+
+        return new MockInsertManyResult($insertedIds);
     }
 
     public function deleteMany($filter, array $options = [])
@@ -95,11 +117,9 @@ class MockCollection extends Collection
 
     public function findOne($filter = [], array $options = [])
     {
-        $matcher = $this->matcherFromQuery($filter);
-        foreach ($this->documents as $doc) {
-            if ($matcher($doc)) {
-                return $doc;
-            }
+        $results = $this->find($filter, $options);
+        foreach ($results as $result) {
+            return $result;
         }
         return null;
     }
@@ -118,20 +138,16 @@ class MockCollection extends Collection
 
     public function createIndex($key, array $options = [])
     {
-        $this->indices[] = ['key' => $key, 'options' => $options];
+        $this->indices[] = new Index($key, $options);
     }
 
-    public function hasIndex($key, array $options = [])
+    public function drop(array $options = [])
     {
-        foreach ($this->indices as $index) {
-            if ($index == ['key' => $key, 'options' => $options]) {
-                return true;
-            }
-        }
-        return false;
+        $this->documents = [];
+        $this->dropped = true;
     }
 
-    private function matcherFromQuery(array $query)
+    private function matcherFromQuery(array $query): callable
     {
         $matchers = [];
 
@@ -149,10 +165,22 @@ class MockCollection extends Collection
         };
     }
 
-    private function matcherFromConstraint($constraint)
+    private function matcherFromConstraint($constraint): callable
     {
         if (is_callable($constraint)) {
             return $constraint;
+        }
+
+        if ($constraint instanceof \PHPUnit_Framework_Constraint) {
+            return function($val) use ($constraint): bool {
+                return $constraint->evaluate($val, '', true);
+            };
+        }
+
+        if ($constraint instanceof ObjectID) {
+            return function($val) use ($constraint): bool {
+                return ("" . $constraint) == ("" . $val);
+            };
         }
 
         if (is_array($constraint)) {
@@ -177,6 +205,10 @@ class MockCollection extends Collection
         }
 
         return function($val) use ($constraint): bool {
+            if ($val instanceof Binary && is_string($constraint)) {
+                return $val->getData() == $constraint;
+            }
+
             return $val == $constraint;
         };
     }

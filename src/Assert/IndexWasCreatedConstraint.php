@@ -1,22 +1,25 @@
 <?php
 namespace Helmich\MongoMock\Assert;
 
-use Helmich\MongoMock\Log\Query;
+use Helmich\MongoMock\Log\Index;
 use Helmich\MongoMock\MockCollection;
 
-class QueryWasExecutedConstraint extends \PHPUnit_Framework_Constraint
+class IndexWasCreatedConstraint extends \PHPUnit_Framework_Constraint
 {
 
-    /** @var array */
-    private $filter;
-
-    /** @var array */
+    /**
+     * @var
+     */
+    private $key;
+    /**
+     * @var array
+     */
     private $options;
 
-    public function __construct($filter, $options = [])
+    public function __construct($key, $options = [])
     {
         parent::__construct();
-        $this->filter = $filter;
+        $this->key = $key;
         $this->options = $options;
     }
 
@@ -26,10 +29,10 @@ class QueryWasExecutedConstraint extends \PHPUnit_Framework_Constraint
             return false;
         }
 
-        $constraint = \PHPUnit_Framework_Assert::equalTo(new Query($this->filter, $this->options));
+        $constraint = \PHPUnit_Framework_Assert::equalTo(new Index($this->key, $this->options));
 
-        foreach ($other->queries as $query) {
-            if ($constraint->evaluate($query, '', true)) {
+        foreach ($other->indices as $index) {
+            if ($constraint->evaluate($index, '', true)) {
                 return true;
             }
         }
@@ -44,6 +47,6 @@ class QueryWasExecutedConstraint extends \PHPUnit_Framework_Constraint
      */
     public function toString()
     {
-        return 'executed query by ' . json_encode($this->filter);
+        return 'has index of ' . json_encode($this->key);
     }
 }
