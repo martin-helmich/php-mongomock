@@ -80,14 +80,17 @@ class MockCollection extends Collection
             });
         }
 
-        foreach ($collectionCopy as $doc) {
-            if ($matcher($doc)) {
-                if ($skip-- > 0) {
-                    continue;
+        return call_user_func(function() use ($collectionCopy, $matcher, $skip) {
+            foreach ($collectionCopy as $doc) {
+                if ($matcher($doc)) {
+                    if ($skip-- > 0) {
+                        continue;
+                    }
+                    yield($doc);
                 }
-                yield($doc);
             }
-        }
+        });
+
     }
 
     public function findOne($filter = [], array $options = [])
