@@ -4,7 +4,7 @@ php:
   - 7.0
 install:
   - ls /home/travis/.phpenv/versions/7.0.3/lib/php/extensions/no-debug-zts-20151012/*
-  - echo "extension = mongodb.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - pecl install mongodb
   - composer install --prefer-dist
 script:
   - vendor/bin/phpunit --coverage-clover build/logs/clover.xml
