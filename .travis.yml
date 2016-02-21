@@ -3,6 +3,7 @@ sudo: false
 php:
   - 7.0
 install:
+  - echo "extension = mongodb.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - composer install --prefer-dist
 script:
   - vendor/bin/phpunit --coverage-clover build/logs/clover.xml
