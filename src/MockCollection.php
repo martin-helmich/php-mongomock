@@ -8,6 +8,19 @@ use MongoDB\BSON\ObjectID;
 use MongoDB\Collection;
 use MongoDB\Model\BSONDocument;
 
+/**
+ * A mocked MongoDB collection
+ *
+ * This class mimicks the behaviour of a MongoDB collection (and also extends
+ * the actual `MongoDB\Collection` class and can be used as a drop-in
+ * replacement). All operations are performed in-memory and are not persisted.
+ *
+ * NOTE: This class is not complete! Many methods are missing and I will only
+ * implement them as soon as I need them. Feel free to open an issue or (better)
+ * a pull request if you need something.
+ *
+ * @package Helmich\MongoMock
+ */
 class MockCollection extends Collection
 {
     public $queries = [];
@@ -15,9 +28,15 @@ class MockCollection extends Collection
     public $indices = [];
     public $dropped = false;
 
-    /** @noinspection PhpMissingParentConstructorInspection */
-    public function __construct()
+    /** @var string */
+    private $name;
+
+    /**
+     * @param string $name
+     */
+    public function __construct(string $name = 'collection')
     {
+        $this->name = $name;
     }
 
     public function insertOne($document, array $options = [])
@@ -57,6 +76,19 @@ class MockCollection extends Collection
     }
 
     public function updateOne($filter, $update, array $options = [])
+    {
+        $matcher = $this->matcherFromQuery($filter);
+        foreach ($this->documents as $i => &$doc) {
+            if ($matcher($doc)) {
+                foreach ($update['$set'] ?? [] as $k => $v) {
+                    $doc[$k] = $v;
+                }
+                return;
+            }
+        }
+    }
+
+    public function updateMany($filter, $update, array $options = [])
     {
         $matcher = $this->matcherFromQuery($filter);
         foreach ($this->documents as $i => &$doc) {
@@ -147,6 +179,97 @@ class MockCollection extends Collection
         $this->dropped = true;
     }
 
+    public function aggregate(array $pipeline, array $options = [])
+    {
+        // TODO: Implement this function
+    }
+
+    public function bulkWrite(array $operations, array $options = [])
+    {
+        // TODO: Implement this function
+    }
+
+    public function createIndexes(array $indexes)
+    {
+        foreach ($indexes as $index) {
+            $key = $index['key'];
+            unset($index['key']);
+            $this->createIndex($key, $index);
+        }
+    }
+
+    public function deleteOne($filter, array $options = [])
+    {
+        $matcher = $this->matcherFromQuery($filter);
+        foreach ($this->documents as $i => $doc) {
+            if ($matcher($doc)) {
+                unset($this->documents[$i]);
+                $this->documents = array_values($this->documents);
+                return;
+            }
+        }
+    }
+
+    public function distinct($fieldName, $filter = [], array $options = [])
+    {
+        // TODO: Implement this function
+    }
+
+    public function dropIndex($indexName, array $options = [])
+    {
+        // TODO: Implement this function
+    }
+
+    public function dropIndexes(array $options = [])
+    {
+        // TODO: Implement this function
+    }
+
+    public function findOneAndDelete($filter, array $options = [])
+    {
+        // TODO: Implement this function
+    }
+
+    public function findOneAndReplace($filter, $replacement, array $options = [])
+    {
+        // TODO: Implement this function
+    }
+
+    public function findOneAndUpdate($filter, $update, array $options = [])
+    {
+        // TODO: Implement this function
+    }
+
+    public function getCollectionName()
+    {
+        // TODO: Implement this function
+    }
+
+    public function getDatabaseName()
+    {
+        // TODO: Implement this function
+    }
+
+    public function getNamespace()
+    {
+        // TODO: Implement this function
+    }
+
+    public function listIndexes(array $options = [])
+    {
+        // TODO: Implement this function
+    }
+
+    public function replaceOne($filter, $replacement, array $options = [])
+    {
+        // TODO: Implement this function
+    }
+
+    public function withOptions(array $options = [])
+    {
+        // TODO: Implement this function
+    }
+
     private function matcherFromQuery(array $query): callable
     {
         $matchers = [];
@@ -201,6 +324,7 @@ class MockCollection extends Collection
                             $result = $result && is_a($val, $operand);
                     }
                 }
+                return $result;
             };
         }
 

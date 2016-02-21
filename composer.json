@@ -19,5 +19,13 @@
     "psr-4": {
       "Helmich\\MongoMock\\": "src"
     }
+  },
+  "autoload-dev": {
+    "files": [
+      "vendor/phpunit/phpunit/src/Framework/Assert/Functions.php"
+    ],
+    "psr-4": {
+      "Helmich\\MongoMock\\Tests\\": "tests"
+    }
   }
 }
