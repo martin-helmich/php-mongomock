@@ -27,5 +27,8 @@
     "psr-4": {
       "Helmich\\MongoMock\\Tests\\": "tests"
     }
+  },
+  "require-dev": {
+    "codeclimate/php-test-reporter": "^0.3.0"
   }
 }
