@@ -354,10 +354,17 @@ class MockCollection extends Collection
                         case '$lte':
                             $result = $result && ($val <= $operand);
                             break;
+                        case '$in':
+                            $result = $result && in_array($val, $operand);
+                            break;
 
                         // Custom operators
                         case '$instanceOf':
                             $result = $result && is_a($val, $operand);
+                            break;
+
+                        default:
+                           throw new \Exception("Constraint operator '".$type."' not yet implemented in MockCollection");
                     }
                 }
                 return $result;

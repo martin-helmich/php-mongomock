@@ -306,6 +306,29 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
     /**
      * @depends testInsertManyInsertsDocuments
      */
+    public function testUpdateConstraintIn()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 1],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+            ['foo' => 'yoo', 'bar' => 3],
+        ]);
+        $this->col->update(
+            ['bar' => ['$in' => [1,3]]],
+            ['$set' => ['foo' => 'Kekse']],
+            ['upsert' => true]);
+
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(2));
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(0));
+        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+        assertThat($this->col->count(['bar' => 3, 'foo' => 'Kekse']), equalTo(1));
+        assertThat($this->col->count(['bar' => 3, 'foo' => 'yoo']), equalTo(0));
+    }
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
     public function testFindCanSortResults()
     {
         $this->col->insertMany([
