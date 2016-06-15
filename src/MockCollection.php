@@ -49,7 +49,14 @@ class MockCollection extends Collection
             $document = new BSONDocument($document);
         }
 
-        $document = new BSONDocument($document);
+        // Possible double instantiation of BSONDocument?
+        // With or without the below, it seems that the
+        // BSONDocument class recurses automatically.
+        // e.g. $document->bsonSerialize() will give the same result
+        // so I couldn't write a test to capture the need or not for this.
+        // I'm commenting it out anyway.
+        // $document = new BSONDocument($document);
+
         $this->documents[] = $document;
 
         return new MockInsertOneResult($document['_id']);
