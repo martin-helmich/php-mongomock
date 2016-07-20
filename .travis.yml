@@ -3,7 +3,6 @@ sudo: false
 php:
   - 7.0
 install:
-  - ls /home/travis/.phpenv/versions/7.0.3/lib/php/extensions/no-debug-zts-20151012/*
   - pecl install mongodb
   - composer install --prefer-dist
 script:
