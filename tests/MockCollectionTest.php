@@ -314,7 +314,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['foo' => 'baz', 'bar' => 2],
             ['foo' => 'yoo', 'bar' => 3],
         ]);
-        $this->col->update(
+        $this->col->updateMany(
             ['bar' => ['$in' => [1,3]]],
             ['$set' => ['foo' => 'Kekse']],
             ['upsert' => true]);
@@ -504,4 +504,11 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
 
         assertThat($result, isNull());
     }
+
+    public function testCollectionGetName()
+    {
+        $col = new MockCollection('foo');
+        assertThat($col->getCollectionName(), equalTo('foo'));
+    }
+
 }

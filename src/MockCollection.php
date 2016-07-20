@@ -283,7 +283,7 @@ class MockCollection extends Collection
 
     public function getCollectionName()
     {
-        // TODO: Implement this function
+      return $this->name;
     }
 
     public function getDatabaseName()
