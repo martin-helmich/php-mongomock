@@ -159,6 +159,25 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
     /**
      * @depends testInsertManyInsertsDocuments
      */
+    public function testUpdateOneSupportsUnset()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 1],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+        $this->col->updateOne(['bar' => 2], ['$unset' => ['foo' => '']]);
+
+        assertThat($this->col->count(['foo' => 'baz']), equalTo(0));
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'foo']), equalTo(1));
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(1));
+        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+        assertThat($this->col->count(['bar' => 2, 'foo' => 'baz']), equalTo(0));
+    }
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
     public function testUpdateManyUpdatesManyObjects()
     {
         $this->col->insertMany([
@@ -171,6 +190,140 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(2));
         assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(0));
         assertThat($this->col->count(['bar' => 2]), equalTo(1));
+    }
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testUpdateManySupportsUnset()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 1],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+        $this->col->updateMany(['bar' => 1], ['$unset' => ['foo' => '']]);
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(0));
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(0));
+        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+        assertThat($this->col->count(['bar' => 1]), equalTo(2));
+
+        // test that inexistant fields do not affect result
+        $this->col->updateMany(['bar' => 1], ['$unset' => ['inexistant' => '']]);
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(0));
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(0));
+        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+        assertThat($this->col->count(['bar' => 1]), equalTo(2));
+    }
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testUpdateUpdatesManyObjects()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 1],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+        $this->col->updateMany(['bar' => 1], ['$set' => ['foo' => 'Kekse']]);
+
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(2));
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(0));
+        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+    }
+
+    public function updateUpsertCore( $x1, $x2, $x3 )
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 1],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+
+        $this->col->updateMany(['bar' => 1], $x1, ['upsert' => true]);
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(2));
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(0));
+        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+
+        $this->col->updateMany(['bar' => 3], $x2, ['upsert' => true]);
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(2));
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(0));
+        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+        assertThat($this->col->count(['bar' => 3]), equalTo(1));
+
+        $this->col->updateOne(['bar' => 1], $x3, ['upsert' => true]);
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(1));
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(1));
+        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+
+        $this->col->updateOne(['bar' => 4], $x3, ['upsert' => true]);
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(1));
+        if(array_key_exists('$set',$x3)) {
+            assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(1));
+        } else {
+            assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(2));
+        }
+        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+        if(array_key_exists('$set',$x3)) {
+            assertThat($this->col->count(['bar' => 4]), equalTo(1));
+        } else {
+            assertThat($this->col->count(['bar' => 4]), equalTo(0));
+        }
+
+    }
+
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testUpdateUpsertCanUpdateAndInsert()
+    {
+        $this->updateUpsertCore(
+            ['$set' => ['foo' => 'Kekse']],
+            ['$set' => ['foo' => 'Kekse']],
+            ['$set' => ['foo' => 'bar']]
+        );
+    }
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testUpdateUpsertWithoutAtomicModifier()
+    {
+        try {
+            $this->updateUpsertCore(
+                ['bar' => 1, 'foo' => 'Kekse'],
+                ['bar' => 3, 'foo' => 'Kekse'],
+                ['bar' => 1, 'foo' => 'bar']
+            );
+            $this->assertTrue(false); // shouldnt get here
+        } catch (\Exception $e) {
+            $this->assertTrue(true); // should get here
+        }
+    }
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testUpdateConstraintIn()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 1],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+            ['foo' => 'yoo', 'bar' => 3],
+        ]);
+        $this->col->updateMany(
+            ['bar' => ['$in' => [1,3]]],
+            ['$set' => ['foo' => 'Kekse']],
+            ['upsert' => true]);
+
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(2));
+        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(0));
+        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+        assertThat($this->col->count(['bar' => 3, 'foo' => 'Kekse']), equalTo(1));
+        assertThat($this->col->count(['bar' => 3, 'foo' => 'yoo']), equalTo(0));
     }
 
     /**
@@ -295,6 +448,36 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
     /**
      * @depends testInsertManyInsertsDocuments
      */
+    public function testFindWorksWithExists()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 3, 'krypton' => true],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+        $result = $this->col->find([
+            'foo' => '$exists'
+        ]);
+        $result = iterator_to_array($result);
+        assertThat(count($result), equalTo(3));
+
+        $result = $this->col->find([
+            'krypton' => '$exists'
+        ]);
+        $result = iterator_to_array($result);
+        assertThat(count($result), equalTo(1));
+        assertThat($result[0]['foo'], equalTo('foo'));
+
+        $result = $this->col->find([
+            'inexistant' => '$exists'
+        ]);
+        $result = iterator_to_array($result);
+        assertThat(count($result), equalTo(0));
+    }
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
     public function testFindOneFindsOne()
     {
         $this->col->insertMany([
@@ -321,4 +504,11 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
 
         assertThat($result, isNull());
     }
+
+    public function testCollectionGetName()
+    {
+        $col = new MockCollection('foo');
+        assertThat($col->getCollectionName(), equalTo('foo'));
+    }
+
 }

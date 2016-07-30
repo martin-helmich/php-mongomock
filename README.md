@@ -1,5 +1,7 @@
 # MongoDB mock classes
 
+[![Build Status](https://travis-ci.org/martin-helmich/php-mongomock.svg?branch=master)](http://travis-ci.org/martin-helmich/php-mongomock)
+
 ## Author and license
 
 Martin Helmich
@@ -7,7 +9,9 @@ This library is [MIT-licenced](LICENSE.txt).
 
 ## Synopsis and motivation
 
-This class contains an implementation of the `MongoDB/Collection` class that
+This class contains an implementation of the [MongoDB/Collection](http://mongodb.github.io/mongo-php-library/classes/collection/) class
+(and not the deprecated [Mongo/Collection](http://php.net/manual/en/class.mongocollection.php) class)
+that
 can store, modify and filter documents in memory, together with a set of
 (optional) PHPUnit assertions.
 
@@ -60,3 +64,15 @@ testability:
         'someProperty' => \PHPUnit_Framework_Assert::isInstanceOf(\MongoDB\BSON\Binary::class)
     ]);
     ```
+
+## Testing
+To run the tests on Ubuntu
+```bash
+[sudo] apt-get install libpcre3-dev php-curl composer php-pear php-dev libcurl4-openssl-dev pkg-config php-curl
+[sudo] pecl install mongodb zip
+echo "extension=mongodb.so" | [sudo] tee -a /etc/php/7.0/cli/conf.d/mongodb.ini
+echo "extension=zip.so" | [sudo] tee -a /etc/php/7.0/cli/conf.d/zip.ini
+composer install
+composer run-script test
+```
+

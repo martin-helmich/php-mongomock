@@ -49,7 +49,14 @@ class MockCollection extends Collection
             $document = new BSONDocument($document);
         }
 
-        $document = new BSONDocument($document);
+        // Possible double instantiation of BSONDocument?
+        // With or without the below, it seems that the
+        // BSONDocument class recurses automatically.
+        // e.g. $document->bsonSerialize() will give the same result
+        // so I couldn't write a test to capture the need or not for this.
+        // I'm commenting it out anyway.
+        // $document = new BSONDocument($document);
+
         $this->documents[] = $document;
 
         return new MockInsertOneResult($document['_id']);
@@ -80,24 +87,58 @@ class MockCollection extends Collection
         $matcher = $this->matcherFromQuery($filter);
         foreach ($this->documents as $i => &$doc) {
             if ($matcher($doc)) {
-                foreach ($update['$set'] ?? [] as $k => $v) {
-                    $doc[$k] = $v;
-                }
+                $this->updateCore($doc,$update);
                 return;
             }
         }
+        $this->updateUpsert($filter,$update,$options,false);
     }
 
     public function updateMany($filter, $update, array $options = [])
     {
         $matcher = $this->matcherFromQuery($filter);
+        $anyUpdates = false;
         foreach ($this->documents as $i => &$doc) {
             if (!$matcher($doc)) {
                 continue;
             }
 
-            foreach ($update['$set'] ?? [] as $k => $v) {
-                $doc[$k] = $v;
+            $this->updateCore($doc,$update); 
+            $anyUpdates = true;
+        }
+
+        $this->updateUpsert($filter,$update,$options,$anyUpdates);
+        return $anyUpdates;
+    }
+
+    private function updateUpsert($filter, $update, $options, $anyUpdates) {
+        if (array_key_exists('upsert', $options)) {
+            if ($options['upsert'] && !$anyUpdates) {
+                if (array_key_exists('$set',$update)) {
+                    $documents = [array_merge($filter, $update['$set'])];
+                } else {
+                    $documents = [$update];
+                }
+                $this->insertMany($documents, $options);
+            }
+        }
+    }
+
+    private function updateCore(&$doc, $update)
+    {
+        // The update operators are required, as exemplified here:
+        // http://mongodb.github.io/mongo-php-library/tutorial/crud/
+        $supported = [ '$set', '$unset' ];
+        $unsupported = array_diff(array_keys($update),$supported);
+        if(count($unsupported)>0) throw new \Exception("Unsupported update operators found: ".implode(', ',$unsupported));
+
+        foreach ($update['$set'] ?? [] as $k => $v) {
+            $doc[$k] = $v;
+        }
+
+        foreach ($update['$unset'] ?? [] as $k => $v) {
+            if (array_key_exists($k,$doc)) {
+                unset($doc[$k]);
             }
         }
     }
@@ -242,7 +283,7 @@ class MockCollection extends Collection
 
     public function getCollectionName()
     {
-        // TODO: Implement this function
+      return $this->name;
     }
 
     public function getDatabaseName()
@@ -280,7 +321,9 @@ class MockCollection extends Collection
 
         return function($doc) use ($matchers): bool {
             foreach ($matchers as $field => $matcher) {
-                if (!$matcher($doc[$field])) {
+                // needed for case of $exists query filter and field is inexistant
+                $val = array_key_exists($field,$doc)?$doc[$field]:null;
+                if (!$matcher($val)) {
                     return false;
                 }
             }
@@ -318,10 +361,17 @@ class MockCollection extends Collection
                         case '$lte':
                             $result = $result && ($val <= $operand);
                             break;
+                        case '$in':
+                            $result = $result && in_array($val, $operand);
+                            break;
 
                         // Custom operators
                         case '$instanceOf':
                             $result = $result && is_a($val, $operand);
+                            break;
+
+                        default:
+                           throw new \Exception("Constraint operator '".$type."' not yet implemented in MockCollection");
                     }
                 }
                 return $result;
@@ -329,6 +379,11 @@ class MockCollection extends Collection
         }
 
         return function($val) use ($constraint): bool {
+            if (is_string($constraint) && $constraint=='$exists') {
+               // note that for inexistant fields, val is overridden to be null
+               return !is_null($val);
+            }
+
             if ($val instanceof Binary && is_string($constraint)) {
                 return $val->getData() == $constraint;
             }
