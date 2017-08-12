@@ -2,7 +2,9 @@
 namespace Helmich\MongoMock\Tests;
 
 use Helmich\MongoMock\MockCollection;
+use Helmich\MongoMock\MockCursor;
 use MongoDB\BSON\ObjectID;
+use MongoDB\BSON\Regex;
 use MongoDB\Collection;
 use MongoDB\InsertManyResult;
 use MongoDB\InsertOneResult;
@@ -488,6 +490,134 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $result = $this->col->findOne(['bar' => ['$lt' => 3]], ['sort' => ['bar' => -1]]);
 
         assertThat($result['foo'], equalTo('baz'));
+    }
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testFindOneByRegex()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 3],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+
+        $regex = new Regex('Foo', 'i');
+        $result = $this->col->findOne(['foo' => $regex]);
+
+        assertThat($result['foo'], equalTo('foo'));
+    }
+    
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testFindNoneByRegex()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 3],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+
+        $regex = new Regex('Foo');
+        $result = $this->col->findOne(['foo' => $regex]);
+
+        assertThat($result, equalTo(null));
+    }
+    
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testFindOneByAndQuery()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 3],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+
+        $result = $this->col->findOne(['$and' => [['foo' => 'foo'], ['bar' => 3]]]);
+        assertThat($result['foo'], equalTo('foo'));
+    }
+    
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testFindNoneByAndQuery()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 3],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+
+        $result = $this->col->findOne(['$and' => [['foo' => 'foo'], ['bar' => 1]]]);
+        assertThat($result, equalTo(null));
+    }
+    
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testManyByOrQuery()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 3],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+
+        $result = $this->col->find(['$or' => [['foo' => 'foo'], ['foo' => 'baz']]]);
+        assertThat($result, isInstanceOf(MockCursor::class));
+        $result = $result->toArray();
+        assertThat(count($result), equalTo(2));
+        assertThat($result[0]['foo'], equalTo('foo'));
+        assertThat($result[1]['foo'], equalTo('baz'));
+    }
+    
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testManyByOrAndQuery()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 3],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+
+        $result = $this->col->find(['$or' => [
+            ['$and' => [['foo' => 'foo'], ['bar' => '3']]], 
+            ['$and' => [['foo' => 'baz'], ['bar' => '2']]],
+        ]]);
+
+        assertThat($result, isInstanceOf(MockCursor::class));
+        $result = $result->toArray();
+        assertThat(count($result), equalTo(2));
+        assertThat($result[0]['foo'], equalTo('foo'));
+        assertThat($result[1]['foo'], equalTo('baz'));
+    }
+    
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testManyByAndOrQuery()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 3],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+
+        $result = $this->col->find(['$and' => [
+            ['$or' => [['foo' => 1], ['foo' => 'foo']]], 
+            ['$or' => [['bar' => 'foo'], ['bar' => 3]]],
+        ]]);
+
+        assertThat($result, isInstanceOf(MockCursor::class));
+        $result = $result->toArray();
+        assertThat(count($result), equalTo(1));
+        assertThat($result[0]['foo'], equalTo('foo'));
     }
 
     /**

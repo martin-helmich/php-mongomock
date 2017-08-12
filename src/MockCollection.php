@@ -5,6 +5,7 @@ use Helmich\MongoMock\Log\Index;
 use Helmich\MongoMock\Log\Query;
 use MongoDB\BSON\Binary;
 use MongoDB\BSON\ObjectID;
+use MongoDB\BSON\Regex;
 use MongoDB\Collection;
 use MongoDB\Model\BSONDocument;
 
@@ -152,6 +153,7 @@ class MockCollection extends Collection
         $skip = $options['skip'] ?? 0;
 
         $collectionCopy = array_values($this->documents);
+        
         if (isset($options['sort'])) {
             usort($collectionCopy, function($a, $b) use ($options): int {
                 foreach($options['sort'] as $key => $dir) {
@@ -176,14 +178,18 @@ class MockCollection extends Collection
         }
 
         return call_user_func(function() use ($collectionCopy, $matcher, $skip) {
+            $cursor = [];
             foreach ($collectionCopy as $doc) {
                 if ($matcher($doc)) {
                     if ($skip-- > 0) {
                         continue;
                     }
-                    yield($doc);
+            
+                    $cursor[] = $doc;
+                    //yield($doc);
                 }
             }
+            return new MockCursor($cursor);
         });
 
     }
@@ -230,7 +236,7 @@ class MockCollection extends Collection
         // TODO: Implement this function
     }
 
-    public function createIndexes(array $indexes)
+    public function createIndexes(array $indexes, array $options = [])
     {
         foreach ($indexes as $index) {
             $key = $index['key'];
@@ -311,20 +317,61 @@ class MockCollection extends Collection
         // TODO: Implement this function
     }
 
-    private function matcherFromQuery(array $query): callable
+    private function buildRecursiveMatcherQuery($query)
     {
         $matchers = [];
-
-        foreach ($query as $field => $constraint) {
-            $matchers[$field] = $this->matcherFromConstraint($constraint);
+        foreach($query as $field => $value) {
+            if($field === '$and' || $field === '$or' || is_numeric($field)) {
+                 $matchers[$field] = $this->buildRecursiveMatcherQuery($value);
+            } else {
+                $matchers[$field] = $this->matcherFromConstraint($value);
+            } 
         }
+        return $matchers;
+    }
 
-        return function($doc) use ($matchers): bool {
+    private function matcherFromQuery(array $query): callable
+    {
+        $matchers = $this->buildRecursiveMatcherQuery($query);
+        $orig_matchers = $matchers;
+        return $is_match = function($doc, $compare=null) use (&$is_match, &$matchers, $orig_matchers): bool {
+            if($compare===null) {
+                $matchers = $orig_matchers;
+            }
+
             foreach ($matchers as $field => $matcher) {
-                // needed for case of $exists query filter and field is inexistant
-                $val = array_key_exists($field,$doc)?$doc[$field]:null;
-                if (!$matcher($val)) {
+                if($field === '$and') {
+                    if(!is_array($matcher) || count($matcher) === 0) {
+                        throw new \Exception('$and expression must be a nonempty array');
+                    }
+                        
+                    foreach($matcher as $sub) {
+                        $matchers = $sub;
+                        if(!$is_match($doc, $field)) {
+                            return false;
+                        }
+                     }
+
+                     return true;
+                } elseif($field === '$or') {
+                    if(!is_array($matcher) || count($matcher) === 0) {
+                        throw new \Exception('$or expression must be a nonempty array');
+                    }
+                        
+                    foreach($matcher as $sub) {
+                        $matchers = $sub;
+                        if($is_match($doc, $field)) {
+                            return true;
+                        }
+                    }
+
                     return false;
+                } else {
+                    // needed for case of $exists query filter and field is inexistant
+                    $val = array_key_exists($field,$doc)?$doc[$field]:null;
+                    if (!$matcher($val)) {
+                        return false;
+                    }
                 }
             }
             return true;
@@ -348,6 +395,12 @@ class MockCollection extends Collection
                 return ("" . $constraint) == ("" . $val);
             };
         }
+    
+        if($constraint instanceof Regex) {
+            return function($val) use ($constraint): bool {
+                return preg_match('#'.$constraint->getPattern().'#'.$constraint->getFlags(), $val);
+            };
+        }
 
         if (is_array($constraint)) {
             return function($val) use ($constraint): bool {
@@ -364,7 +417,12 @@ class MockCollection extends Collection
                         case '$in':
                             $result = $result && in_array($val, $operand);
                             break;
-
+                        case '$elemMatch':
+                            $result = $result;
+                            break;
+                        case '$exists': 
+                            $result = $result && $operand === 1;
+                            break;
                         // Custom operators
                         case '$instanceOf':
                             $result = $result && is_a($val, $operand);
