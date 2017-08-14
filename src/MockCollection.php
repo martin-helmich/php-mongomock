@@ -8,6 +8,7 @@ use MongoDB\BSON\ObjectID;
 use MongoDB\BSON\Regex;
 use MongoDB\Collection;
 use MongoDB\Model\BSONDocument;
+use MongoDB\BSON;
 
 /**
  * A mocked MongoDB collection
@@ -24,6 +25,18 @@ use MongoDB\Model\BSONDocument;
  */
 class MockCollection extends Collection
 {
+    const types = [
+        5   => BSON\Binary::class,
+        128 => BSON\Decimal128::class,
+        13  => BSON\JavaScript::class,
+        127 => BSON\MaxKey::class,
+        -1  => BSON\MinKey::class,
+        7   => BSON\ObjectId::class,
+        11  => BSON\Regex::class,
+        17  => BSON\Timestamp::class,
+        18  => BSON\UTCDateTime::class,
+    ];
+
     public $queries = [];
     public $documents = [];
     public $indices = [];
@@ -408,6 +421,12 @@ class MockCollection extends Collection
                 foreach ($constraint as $type => $operand) {
                     switch ($type) {
                         // Mongo operators (subset)
+                        case '$gt':
+                            $result = $result && ($val > $operand);
+                            break;
+                        case '$gte':
+                            $result = $result && ($val >= $operand);
+                            break;
                         case '$lt':
                             $result = $result && ($val < $operand);
                             break;
@@ -422,6 +441,9 @@ class MockCollection extends Collection
                             break;
                         case '$exists': 
                             $result = $result && $operand === 1;
+                            break;
+                        case '$type':
+                            $result = $result && $this->isInstanceOfType($operand, $value);
                             break;
                         // Custom operators
                         case '$instanceOf':
@@ -448,5 +470,10 @@ class MockCollection extends Collection
 
             return $val == $constraint;
         };
+    }
+
+    protected function isInstanceOfType(int $type, $value): bool
+    {
+        return isset(self::TYPES[$type]) && is_a($value, self::TYPES[$type]);  
     }
 }
