@@ -619,6 +619,117 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         assertThat(count($result), equalTo(1));
         assertThat($result[0]['foo'], equalTo('foo'));
     }
+    
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testOneSubFieldQuery()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => ['foo' => 1]],
+            ['foo' => 'bar', 'bar' => ['foo' => 2]],
+            ['foo' => 'baz', 'bar' => ['foo' => 3]],
+        ]);
+
+        $result = $this->col->findOne(
+            ['bar.foo' => 1]
+        );
+        assertThat($result['foo'], equalTo('foo'));
+    }
+    
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testManyExistsQuery()
+    {
+        $this->col->insertMany([
+            ['foo' => 'for', 'bar' => 4],
+            ['foo' => 'foo', 'bar' => 3],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'ba' => 2],
+        ]);
+
+        $result = $this->col->find(
+            ['bar' => ['$exists' => 1]]
+        );
+
+        assertThat($result, isInstanceOf(MockCursor::class));
+        $result = $result->toArray();
+        assertThat(count($result), equalTo(3));
+        assertThat($result[0]['foo'], equalTo('for'));
+        assertThat($result[1]['foo'], equalTo('foo'));
+        assertThat($result[2]['foo'], equalTo('bar'));
+    }    
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testManyOrGteAndLteQuery()
+    {
+        $this->col->insertMany([
+            ['foo' => 'for', 'bar' => 4],
+            ['foo' => 'foo', 'bar' => 3],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+
+        $result = $this->col->find(['$or' => [
+            ['bar' => ['$lte' => 1]], 
+            ['bar' => ['$gte' => 3]]
+        ]]);
+
+        assertThat($result, isInstanceOf(MockCursor::class));
+        $result = $result->toArray();
+        assertThat(count($result), equalTo(3));
+        assertThat($result[0]['foo'], equalTo('for'));
+        assertThat($result[1]['foo'], equalTo('foo'));
+        assertThat($result[2]['foo'], equalTo('bar'));
+    }
+    
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testManyElementMatchEqQuery()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 3],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+
+        $result = $this->col->find(
+            ['bar' => ['$elemMatch' => ['$eq' => 3]]]
+        );
+
+        assertThat($result, isInstanceOf(MockCursor::class));
+        $result = $result->toArray();
+        assertThat(count($result), equalTo(1));
+        assertThat($result[0]['foo'], equalTo('foo'));
+    }
+    
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testManyElementMatchInQuery()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => [['foobar' => 1], ['foobar' => 2]]],
+            ['foo' => 'foo', 'bar' => [['foobar' => 4], ['foobar' => 5]]],
+            ['foo' => 'bar', 'bar' => [['foobar' => 3], ['foobar' => 4]]],
+            ['foo' => 'baz', 'bar' => [['foobar' => 1]]],
+        ]);
+
+        $result = $this->col->find(
+            ['bar' => ['$elemMatch' => ['foobar' => ['$in' => [1, 3]]]]]
+        );
+
+        assertThat($result, isInstanceOf(MockCursor::class));
+        $result = $result->toArray();
+        assertThat(count($result), equalTo(3));
+        assertThat($result[0]['foo'], equalTo('foo'));
+        assertThat($result[1]['foo'], equalTo('bar'));
+        assertThat($result[2]['foo'], equalTo('baz'));
+    }
 
     /**
      * @depends testInsertManyInsertsDocuments

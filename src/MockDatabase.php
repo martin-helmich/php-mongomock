@@ -69,7 +69,7 @@ class MockDatabase extends Database
         if(isset($this->collection[$name])) {
             return $this->collection[$name];
         } else {
-            return $this->collection[$name] = new MockCollection($name);
+            return $this->collection[$name] = new MockCollection($name, $this);
         }
     }
 }
