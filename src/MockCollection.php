@@ -62,7 +62,7 @@ class MockCollection extends Collection
     /**
      * @param string $name
      */
-    public function __construct(string $name = 'collection', ?MockDatabase $db=null)
+    public function __construct(string $name = 'collection', $db=null)
     {
         $this->name = $name;
         $this->db   = $db;
