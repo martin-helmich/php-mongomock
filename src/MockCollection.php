@@ -2,6 +2,7 @@
 
 namespace Helmich\MongoMock;
 
+use ArrayAccess;
 use Helmich\MongoMock\Log\Index;
 use Helmich\MongoMock\Log\Query;
 use MongoDB\BSON;
@@ -412,7 +413,7 @@ class MockCollection extends Collection
         };
     }
 
-    private function getArrayValue(Iterable $array, string $path, string $separator = '.')
+    private function getArrayValue($array, string $path, string $separator = '.')
     {
         if (isset($array[$path])) {
             return $array[$path];
