@@ -62,7 +62,7 @@ class MockCollection extends Collection
     /**
      * @param string $name
      */
-    public function __construct(string $name = 'collection', $db=null)
+    public function __construct(string $name = 'collection', /*PHP7.1 ?MockDatabase*/ $db=null)
     {
         $this->name = $name;
         $this->db   = $db;
@@ -409,7 +409,7 @@ class MockCollection extends Collection
         };
     }
 
-    private function getArrayValue(Iterable $array, string $path, string $separator='.')
+    private function getArrayValue(/*PHP 7.1 Iterable*/ $array, string $path, string $separator='.')
     {
         if(isset($array[$path])) {
             return $array[$path];
