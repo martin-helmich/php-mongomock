@@ -1,14 +1,15 @@
 <?php
+
 namespace Helmich\MongoMock;
 
 use Helmich\MongoMock\Log\Index;
 use Helmich\MongoMock\Log\Query;
+use MongoDB\BSON;
 use MongoDB\BSON\Binary;
 use MongoDB\BSON\ObjectID;
 use MongoDB\BSON\Regex;
 use MongoDB\Collection;
 use MongoDB\Model\BSONDocument;
-use MongoDB\BSON;
 
 /**
  * A mocked MongoDB collection
@@ -26,23 +27,23 @@ use MongoDB\BSON;
 class MockCollection extends Collection
 {
     const TYPE_BSON = [
-        5   => BSON\Binary::class,
+        5 => BSON\Binary::class,
         128 => BSON\Decimal128::class,
-        13  => BSON\JavaScript::class,
+        13 => BSON\JavaScript::class,
         127 => BSON\MaxKey::class,
-        -1  => BSON\MinKey::class,
-        7   => BSON\ObjectId::class,
-        11  => BSON\Regex::class,
-        17  => BSON\Timestamp::class,
-        9   => BSON\UTCDateTime::class
+        -1 => BSON\MinKey::class,
+        7 => BSON\ObjectId::class,
+        11 => BSON\Regex::class,
+        17 => BSON\Timestamp::class,
+        9 => BSON\UTCDateTime::class
     ];
 
     const TYPE = [
-        1  => 'double',
-        2  => 'string',
-        3  => 'object',
-        4  => 'array',
-        8  => 'boolean',
+        1 => 'double',
+        2 => 'string',
+        3 => 'object',
+        4 => 'array',
+        8 => 'boolean',
         10 => 'NULL',
         16 => 'integer',
         18 => 'integer'
@@ -55,17 +56,18 @@ class MockCollection extends Collection
 
     /** @var string */
     private $name;
-    
+
     /** @var MockDatabase */
     private $db;
 
     /**
      * @param string $name
+     * @param MockDatabase $db
      */
-    public function __construct(string $name = 'collection', /*PHP7.1 ?MockDatabase*/ $db=null)
+    public function __construct(string $name = 'collection', MockDatabase $db = null)
     {
         $this->name = $name;
-        $this->db   = $db;
+        $this->db = $db;
     }
 
     public function insertOne($document, array $options = [])
@@ -93,7 +95,7 @@ class MockCollection extends Collection
 
     public function insertMany(array $documents, array $options = [])
     {
-        $insertedIds = array_map(function($doc) use ($options) {
+        $insertedIds = array_map(function ($doc) use ($options) {
             return $this->insertOne($doc, $options)->getInsertedId();
         }, $documents);
 
@@ -116,11 +118,11 @@ class MockCollection extends Collection
         $matcher = $this->matcherFromQuery($filter);
         foreach ($this->documents as $i => &$doc) {
             if ($matcher($doc)) {
-                $this->updateCore($doc,$update);
+                $this->updateCore($doc, $update);
                 return;
             }
         }
-        $this->updateUpsert($filter,$update,$options,false);
+        $this->updateUpsert($filter, $update, $options, false);
     }
 
     public function updateMany($filter, $update, array $options = [])
@@ -132,18 +134,19 @@ class MockCollection extends Collection
                 continue;
             }
 
-            $this->updateCore($doc,$update); 
+            $this->updateCore($doc, $update);
             $anyUpdates = true;
         }
 
-        $this->updateUpsert($filter,$update,$options,$anyUpdates);
+        $this->updateUpsert($filter, $update, $options, $anyUpdates);
         return $anyUpdates;
     }
 
-    private function updateUpsert($filter, $update, $options, $anyUpdates) {
+    private function updateUpsert($filter, $update, $options, $anyUpdates)
+    {
         if (array_key_exists('upsert', $options)) {
             if ($options['upsert'] && !$anyUpdates) {
-                if (array_key_exists('$set',$update)) {
+                if (array_key_exists('$set', $update)) {
                     $documents = [array_merge($filter, $update['$set'])];
                 } else {
                     $documents = [$update];
@@ -157,22 +160,24 @@ class MockCollection extends Collection
     {
         // The update operators are required, as exemplified here:
         // http://mongodb.github.io/mongo-php-library/tutorial/crud/
-        $supported = [ '$set', '$unset' ];
-        $unsupported = array_diff(array_keys($update),$supported);
-        if(count($unsupported)>0) throw new Exception("Unsupported update operators found: ".implode(', ',$unsupported));
+        $supported = ['$set', '$unset'];
+        $unsupported = array_diff(array_keys($update), $supported);
+        if (count($unsupported) > 0) {
+            throw new Exception("Unsupported update operators found: " . implode(', ', $unsupported));
+        }
 
         foreach ($update['$set'] ?? [] as $k => $v) {
             $doc[$k] = $v;
         }
 
         foreach ($update['$unset'] ?? [] as $k => $v) {
-            if (array_key_exists($k,$doc)) {
+            if (array_key_exists($k, $doc)) {
                 unset($doc[$k]);
             }
         }
     }
 
-    public function find($filter = [], array $options = [])
+    public function find($filter = [], array $options = []): MockCursor
     {
         // record query for future assertions
         $this->queries[] = new Query($filter, $options);
@@ -181,10 +186,10 @@ class MockCollection extends Collection
         $skip = $options['skip'] ?? 0;
 
         $collectionCopy = array_values($this->documents);
-        
+
         if (isset($options['sort'])) {
-            usort($collectionCopy, function($a, $b) use ($options): int {
-                foreach($options['sort'] as $key => $dir) {
+            usort($collectionCopy, function ($a, $b) use ($options): int {
+                foreach ($options['sort'] as $key => $dir) {
                     $av = $a[$key];
                     $bv = $b[$key];
 
@@ -205,20 +210,18 @@ class MockCollection extends Collection
             });
         }
 
-        return call_user_func(function() use ($collectionCopy, $matcher, $skip) {
-            $cursor = [];
-            foreach ($collectionCopy as $doc) {
-                if ($matcher($doc)) {
-                    if ($skip-- > 0) {
-                        continue;
-                    }
-            
-                    $cursor[] = $doc;
+        $cursor = [];
+        foreach ($collectionCopy as $doc) {
+            if ($matcher($doc)) {
+                if ($skip-- > 0) {
+                    continue;
                 }
-            }
-            return new MockCursor($cursor);
-        });
 
+                $cursor[] = $doc;
+            }
+        }
+
+        return new MockCursor($cursor);
     }
 
     public function findOne($filter = [], array $options = [])
@@ -236,7 +239,7 @@ class MockCollection extends Collection
         $matcher = $this->matcherFromQuery($filter);
         foreach ($this->documents as $i => $doc) {
             if ($matcher($doc)) {
-                $count ++;
+                $count++;
             }
         }
         return $count;
@@ -316,12 +319,12 @@ class MockCollection extends Collection
 
     public function getCollectionName()
     {
-      return $this->name;
+        return $this->name;
     }
 
     public function getDatabaseName()
     {
-        if($this->db === null) {
+        if ($this->db === null) {
             throw new Exception('database required to call getDatabaseName()');
         } else {
             return (string)$this->db;
@@ -348,15 +351,15 @@ class MockCollection extends Collection
         // TODO: Implement this function
     }
 
-    private function buildRecursiveMatcherQuery($query)
+    private function buildRecursiveMatcherQuery(array $query): array
     {
         $matchers = [];
-        foreach($query as $field => $value) {
-            if($field === '$and' || $field === '$or' || is_numeric($field)) {
-                 $matchers[$field] = $this->buildRecursiveMatcherQuery($value);
+        foreach ($query as $field => $value) {
+            if ($field === '$and' || $field === '$or' || is_numeric($field)) {
+                $matchers[$field] = $this->buildRecursiveMatcherQuery($value);
             } else {
                 $matchers[$field] = $this->matcherFromConstraint($value);
-            } 
+            }
         }
         return $matchers;
     }
@@ -365,33 +368,33 @@ class MockCollection extends Collection
     {
         $matchers = $this->buildRecursiveMatcherQuery($query);
         $orig_matchers = $matchers;
-        return $is_match = function($doc, $compare=null) use (&$is_match, &$matchers, $orig_matchers): bool {
-            if($compare===null) {
+        return $is_match = function ($doc, $compare = null) use (&$is_match, &$matchers, $orig_matchers): bool {
+            if ($compare === null) {
                 $matchers = $orig_matchers;
             }
 
             foreach ($matchers as $field => $matcher) {
-                if($field === '$and') {
-                    if(!is_array($matcher) || count($matcher) === 0) {
+                if ($field === '$and') {
+                    if (!is_array($matcher) || count($matcher) === 0) {
                         throw new Exception('$and expression must be a nonempty array');
                     }
-                        
-                    foreach($matcher as $sub) {
+
+                    foreach ($matcher as $sub) {
                         $matchers = $sub;
-                        if(!$is_match($doc, $field)) {
+                        if (!$is_match($doc, $field)) {
                             return false;
                         }
-                     }
+                    }
 
-                     return true;
-                } elseif($field === '$or') {
-                    if(!is_array($matcher) || count($matcher) === 0) {
+                    return true;
+                } elseif ($field === '$or') {
+                    if (!is_array($matcher) || count($matcher) === 0) {
                         throw new Exception('$or expression must be a nonempty array');
                     }
-                        
-                    foreach($matcher as $sub) {
+
+                    foreach ($matcher as $sub) {
                         $matchers = $sub;
-                        if($is_match($doc, $field)) {
+                        if ($is_match($doc, $field)) {
                             return true;
                         }
                     }
@@ -409,19 +412,19 @@ class MockCollection extends Collection
         };
     }
 
-    private function getArrayValue(/*PHP 7.1 Iterable*/ $array, string $path, string $separator='.')
+    private function getArrayValue(Iterable $array, string $path, string $separator = '.')
     {
-        if(isset($array[$path])) {
+        if (isset($array[$path])) {
             return $array[$path];
         }
 
         $keys = explode($separator, $path);
 
         foreach ($keys as $key) {
-            if(!isset($array[$key])) {
+            if (!isset($array[$key])) {
                 //needed for case of $exists query filter and field is inexistant
                 return null;
-             }
+            }
 
             $array = $array[$key];
         }
@@ -437,26 +440,26 @@ class MockCollection extends Collection
         }
 
         if ($constraint instanceof \PHPUnit_Framework_Constraint) {
-            return function($val) use ($constraint): bool {
+            return function ($val) use ($constraint): bool {
                 return $constraint->evaluate($val, '', true);
             };
         }
 
         if ($constraint instanceof ObjectID) {
-            return function($val) use ($constraint): bool {
+            return function ($val) use ($constraint): bool {
                 return ("" . $constraint) == ("" . $val);
             };
         }
-    
-        if($constraint instanceof Regex) {
-            return function($val) use ($constraint): bool {
-                return preg_match('#'.$constraint->getPattern().'#'.$constraint->getFlags(), $val);
+
+        if ($constraint instanceof Regex) {
+            return function ($val) use ($constraint): bool {
+                $pattern = preg_quote($constraint->getPattern(), '#');
+                return preg_match('#' . $pattern . '#' . $constraint->getFlags(), $val);
             };
         }
 
         if (is_array($constraint)) {
-            $orig_constraint = $constraint;
-            return $match = function($val) use (&$constraint, &$match): bool {
+            return $match = function ($val) use (&$constraint, &$match): bool {
                 $result = true;
                 foreach ($constraint as $type => $operand) {
                     switch ($type) {
@@ -483,11 +486,11 @@ class MockCollection extends Collection
                             $result = $result && in_array($val, $operand);
                             break;
                         case '$elemMatch':
-                            if(is_array($val)) {
+                            if (is_array($val)) {
                                 $matcher = $this->matcherFromQuery($operand);
-                                foreach($val as $v) {
+                                foreach ($val as $v) {
                                     $result = $result && $matcher($v);
-                                    if($result === true) {
+                                    if ($result === true) {
                                         break;
                                     }
                                 }
@@ -496,7 +499,7 @@ class MockCollection extends Collection
                                 $result = $result && $match($val);
                             }
                             break;
-                        case '$exists': 
+                        case '$exists':
                             $result = $result && $val !== null;
                             break;
                         case '$type':
@@ -508,17 +511,17 @@ class MockCollection extends Collection
                             break;
 
                         default:
-                           throw new Exception("Constraint operator '".$type."' not yet implemented in MockCollection");
+                            throw new Exception("Constraint operator '" . $type . "' not yet implemented in MockCollection");
                     }
                 }
                 return $result;
             };
         }
 
-        return function($val) use ($constraint): bool {
-            if (is_string($constraint) && $constraint=='$exists') {
-               // note that for inexistant fields, val is overridden to be null
-               return !is_null($val);
+        return function ($val) use ($constraint): bool {
+            if (is_string($constraint) && $constraint == '$exists') {
+                // note that for inexistant fields, val is overridden to be null
+                return !is_null($val);
             }
 
             if ($val instanceof Binary && is_string($constraint)) {
@@ -531,8 +534,8 @@ class MockCollection extends Collection
 
     protected function compareType(int $type, $value): bool
     {
-        if($value instanceof BSON\Type) {
-            return isset(self::TYPE_BSON[$type]) && is_a($value, self::TYPE_BSON[$type]);  
+        if ($value instanceof BSON\Type) {
+            return isset(self::TYPE_BSON[$type]) && is_a($value, self::TYPE_BSON[$type]);
         } else {
             return isset(self::TYPE[$type]) && gettype($value) === self::TYPE[$type];
         }

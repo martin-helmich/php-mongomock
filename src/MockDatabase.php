@@ -1,12 +1,8 @@
 <?php
 namespace Helmich\MongoMock;
 
-use Helmich\MongoMock\Log\Index;
-use Helmich\MongoMock\Log\Query;
-use MongoDB\BSON\Binary;
-use MongoDB\BSON\ObjectID;
+use MongoDB\Collection;
 use MongoDB\Database;
-use MongoDB\Model\BSONDocument;
 
 /**
  * A mocked MongoDB database
@@ -26,12 +22,12 @@ class MockDatabase extends Database
     /** @var string */
     private $name;
 
-    /** @var collection **/
-    private $collection = [];
+    /** @var Collection **/
+    private $collections = [];
 
     /**
      * @param string $name
-     */    
+     */
     public function __construct(string $name = 'database')
     {
         $this->name = $name;
@@ -62,14 +58,14 @@ class MockDatabase extends Database
      * Return collection
      * 
      * @param  string $name
+     * @param  array  $options
      * @return Collection
      */    
     public function selectCollection($name, array $options = [])
     {
-        if(isset($this->collection[$name])) {
-            return $this->collection[$name];
-        } else {
-            return $this->collection[$name] = new MockCollection($name, $this);
+        if (!isset($this->collections[$name])) {
+            $this->collections[$name] = new MockCollection($name, $this);
         }
+        return $this->collections[$name];
     }
 }
