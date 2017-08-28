@@ -508,6 +508,23 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
 
         assertThat($result['foo'], equalTo('foo'));
     }
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testFindOneByRegexWithDelimiterInRegex()
+    {
+        $this->col->insertMany([
+            ['foo' => '#', 'bar' => 3],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+
+        $regex = new Regex('#', 'i');
+        $result = $this->col->findOne(['foo' => $regex]);
+
+        assertThat($result['foo'], equalTo('#'));
+    }
     
     /**
      * @depends testInsertManyInsertsDocuments
