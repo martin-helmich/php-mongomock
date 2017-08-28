@@ -5,8 +5,10 @@ use Helmich\MongoMock\Log\Index;
 use Helmich\MongoMock\Log\Query;
 use MongoDB\BSON\Binary;
 use MongoDB\BSON\ObjectID;
+use MongoDB\BSON\Regex;
 use MongoDB\Collection;
 use MongoDB\Model\BSONDocument;
+use MongoDB\BSON;
 
 /**
  * A mocked MongoDB collection
@@ -23,6 +25,29 @@ use MongoDB\Model\BSONDocument;
  */
 class MockCollection extends Collection
 {
+    const TYPE_BSON = [
+        5   => BSON\Binary::class,
+        128 => BSON\Decimal128::class,
+        13  => BSON\JavaScript::class,
+        127 => BSON\MaxKey::class,
+        -1  => BSON\MinKey::class,
+        7   => BSON\ObjectId::class,
+        11  => BSON\Regex::class,
+        17  => BSON\Timestamp::class,
+        9   => BSON\UTCDateTime::class
+    ];
+
+    const TYPE = [
+        1  => 'double',
+        2  => 'string',
+        3  => 'object',
+        4  => 'array',
+        8  => 'boolean',
+        10 => 'NULL',
+        16 => 'integer',
+        18 => 'integer'
+    ];
+
     public $queries = [];
     public $documents = [];
     public $indices = [];
@@ -30,13 +55,17 @@ class MockCollection extends Collection
 
     /** @var string */
     private $name;
+    
+    /** @var MockDatabase */
+    private $db;
 
     /**
      * @param string $name
      */
-    public function __construct(string $name = 'collection')
+    public function __construct(string $name = 'collection', /*PHP7.1 ?MockDatabase*/ $db=null)
     {
         $this->name = $name;
+        $this->db   = $db;
     }
 
     public function insertOne($document, array $options = [])
@@ -130,7 +159,7 @@ class MockCollection extends Collection
         // http://mongodb.github.io/mongo-php-library/tutorial/crud/
         $supported = [ '$set', '$unset' ];
         $unsupported = array_diff(array_keys($update),$supported);
-        if(count($unsupported)>0) throw new \Exception("Unsupported update operators found: ".implode(', ',$unsupported));
+        if(count($unsupported)>0) throw new Exception("Unsupported update operators found: ".implode(', ',$unsupported));
 
         foreach ($update['$set'] ?? [] as $k => $v) {
             $doc[$k] = $v;
@@ -152,6 +181,7 @@ class MockCollection extends Collection
         $skip = $options['skip'] ?? 0;
 
         $collectionCopy = array_values($this->documents);
+        
         if (isset($options['sort'])) {
             usort($collectionCopy, function($a, $b) use ($options): int {
                 foreach($options['sort'] as $key => $dir) {
@@ -176,14 +206,17 @@ class MockCollection extends Collection
         }
 
         return call_user_func(function() use ($collectionCopy, $matcher, $skip) {
+            $cursor = [];
             foreach ($collectionCopy as $doc) {
                 if ($matcher($doc)) {
                     if ($skip-- > 0) {
                         continue;
                     }
-                    yield($doc);
+            
+                    $cursor[] = $doc;
                 }
             }
+            return new MockCursor($cursor);
         });
 
     }
@@ -230,7 +263,7 @@ class MockCollection extends Collection
         // TODO: Implement this function
     }
 
-    public function createIndexes(array $indexes)
+    public function createIndexes(array $indexes, array $options = [])
     {
         foreach ($indexes as $index) {
             $key = $index['key'];
@@ -288,7 +321,11 @@ class MockCollection extends Collection
 
     public function getDatabaseName()
     {
-        // TODO: Implement this function
+        if($this->db === null) {
+            throw new Exception('database required to call getDatabaseName()');
+        } else {
+            return (string)$this->db;
+        }
     }
 
     public function getNamespace()
@@ -311,25 +348,87 @@ class MockCollection extends Collection
         // TODO: Implement this function
     }
 
-    private function matcherFromQuery(array $query): callable
+    private function buildRecursiveMatcherQuery($query)
     {
         $matchers = [];
-
-        foreach ($query as $field => $constraint) {
-            $matchers[$field] = $this->matcherFromConstraint($constraint);
+        foreach($query as $field => $value) {
+            if($field === '$and' || $field === '$or' || is_numeric($field)) {
+                 $matchers[$field] = $this->buildRecursiveMatcherQuery($value);
+            } else {
+                $matchers[$field] = $this->matcherFromConstraint($value);
+            } 
         }
+        return $matchers;
+    }
 
-        return function($doc) use ($matchers): bool {
+    private function matcherFromQuery(array $query): callable
+    {
+        $matchers = $this->buildRecursiveMatcherQuery($query);
+        $orig_matchers = $matchers;
+        return $is_match = function($doc, $compare=null) use (&$is_match, &$matchers, $orig_matchers): bool {
+            if($compare===null) {
+                $matchers = $orig_matchers;
+            }
+
             foreach ($matchers as $field => $matcher) {
-                // needed for case of $exists query filter and field is inexistant
-                $val = array_key_exists($field,$doc)?$doc[$field]:null;
-                if (!$matcher($val)) {
+                if($field === '$and') {
+                    if(!is_array($matcher) || count($matcher) === 0) {
+                        throw new Exception('$and expression must be a nonempty array');
+                    }
+                        
+                    foreach($matcher as $sub) {
+                        $matchers = $sub;
+                        if(!$is_match($doc, $field)) {
+                            return false;
+                        }
+                     }
+
+                     return true;
+                } elseif($field === '$or') {
+                    if(!is_array($matcher) || count($matcher) === 0) {
+                        throw new Exception('$or expression must be a nonempty array');
+                    }
+                        
+                    foreach($matcher as $sub) {
+                        $matchers = $sub;
+                        if($is_match($doc, $field)) {
+                            return true;
+                        }
+                    }
+
                     return false;
+                } else {
+                    // needed for case of $exists query filter and field is inexistant
+                    $val = $this->getArrayValue($doc, $field);
+                    if (!$matcher($val)) {
+                        return false;
+                    }
                 }
             }
             return true;
         };
     }
+
+    private function getArrayValue(/*PHP 7.1 Iterable*/ $array, string $path, string $separator='.')
+    {
+        if(isset($array[$path])) {
+            return $array[$path];
+        }
+
+        $keys = explode($separator, $path);
+
+        foreach ($keys as $key) {
+            if(!isset($array[$key])) {
+                //needed for case of $exists query filter and field is inexistant
+                return null;
+             }
+
+            $array = $array[$key];
+        }
+
+        return $array;
+    }
+
 
     private function matcherFromConstraint($constraint): callable
     {
@@ -348,30 +447,68 @@ class MockCollection extends Collection
                 return ("" . $constraint) == ("" . $val);
             };
         }
+    
+        if($constraint instanceof Regex) {
+            return function($val) use ($constraint): bool {
+                return preg_match('#'.$constraint->getPattern().'#'.$constraint->getFlags(), $val);
+            };
+        }
 
         if (is_array($constraint)) {
-            return function($val) use ($constraint): bool {
+            $orig_constraint = $constraint;
+            return $match = function($val) use (&$constraint, &$match): bool {
                 $result = true;
                 foreach ($constraint as $type => $operand) {
                     switch ($type) {
                         // Mongo operators (subset)
+                        case '$gt':
+                            $result = $result && ($val > $operand);
+                            break;
+                        case '$gte':
+                            $result = $result && ($val >= $operand);
+                            break;
                         case '$lt':
                             $result = $result && ($val < $operand);
                             break;
                         case '$lte':
                             $result = $result && ($val <= $operand);
                             break;
+                        case '$eq':
+                            $result = $result && ($val === $operand);
+                            break;
+                        case '$ne':
+                            $result = $result && ($val != $operand);
+                            break;
                         case '$in':
                             $result = $result && in_array($val, $operand);
                             break;
-
+                        case '$elemMatch':
+                            if(is_array($val)) {
+                                $matcher = $this->matcherFromQuery($operand);
+                                foreach($val as $v) {
+                                    $result = $result && $matcher($v);
+                                    if($result === true) {
+                                        break;
+                                    }
+                                }
+                            } else {
+                                $constraint = $operand;
+                                $result = $result && $match($val);
+                            }
+                            break;
+                        case '$exists': 
+                            $result = $result && $val !== null;
+                            break;
+                        case '$type':
+                            $result = $result && $this->compareType($operand, $val);
+                            break;
                         // Custom operators
                         case '$instanceOf':
                             $result = $result && is_a($val, $operand);
                             break;
 
                         default:
-                           throw new \Exception("Constraint operator '".$type."' not yet implemented in MockCollection");
+                           throw new Exception("Constraint operator '".$type."' not yet implemented in MockCollection");
                     }
                 }
                 return $result;
@@ -390,5 +527,14 @@ class MockCollection extends Collection
 
             return $val == $constraint;
         };
+    }
+
+    protected function compareType(int $type, $value): bool
+    {
+        if($value instanceof BSON\Type) {
+            return isset(self::TYPE_BSON[$type]) && is_a($value, self::TYPE_BSON[$type]);  
+        } else {
+            return isset(self::TYPE[$type]) && gettype($value) === self::TYPE[$type];
+        }
     }
 }
