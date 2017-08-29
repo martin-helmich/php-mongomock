@@ -1,14 +1,15 @@
 <?php
+
 namespace Helmich\MongoMock;
- 
+
 use \Iterator;
 
 class MockCursor implements Iterator
 {
-    protected $store = [];
-    protected $position = 0;
+    private $store = [];
+    private $position = 0;
 
-    public function __construct(array $documents=[]) 
+    public function __construct(array $documents = [])
     {
         $this->store = $documents;
     }
@@ -18,23 +19,28 @@ class MockCursor implements Iterator
         return $this->store;
     }
 
-    function rewind() {
+    public function rewind()
+    {
         $this->position = 0;
     }
 
-    function current() {
+    public function current()
+    {
         return $this->store[$this->position];
     }
 
-    function key() {
+    public function key()
+    {
         return $this->position;
     }
 
-    function next() {
+    public function next()
+    {
         ++$this->position;
     }
 
-    function valid() {
+    public function valid()
+    {
         return isset($this->store[$this->position]);
     }
 }

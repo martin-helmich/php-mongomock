@@ -9,14 +9,14 @@ This library is [MIT-licenced](LICENSE.txt).
 
 ## Synopsis and motivation
 
-This class contains an implementation of the [MongoDB/Collection](http://mongodb.github.io/mongo-php-library/classes/collection/) class
-(and not the deprecated [Mongo/Collection](http://php.net/manual/en/class.mongocollection.php) class)
-that
-can store, modify and filter documents in memory, together with a set of
+This class contains implementations of the [MongoDB\Collection][mongodb-collection] and
+[MongoDB\Database][mongodb-database] classes (not to be confused with the [Mongo\Collection][mongo-collection]
+class from the deprecated _mongo_ extension)
+that can store, modify and filter documents in memory, together with a set of
 (optional) PHPUnit assertions.
 
 I wrote this library because I wanted to unit-test a library that used MongoDB
-collections intensively and felt that mocking the `MongoDB/Collection` class
+collections intensively and felt that mocking the `MongoDB\Collection` class
 using PHPUnit's built-in mock builders was too restrictive.
 
 **Note**: Currently, this implementation contains only a subset of the actual
@@ -26,7 +26,7 @@ issue, or (better yet) a pull request.
 
 ## Usage
 
-You can use this class exactly as you'd use the `MongoDB/Collection` class
+You can use this library exactly as you'd use the `MongoDB\Collection` or `MongoDB\Database` classes
 (in theory, at least -- remember, this package is not API-complete):
 
 ```php
@@ -76,3 +76,6 @@ composer install
 composer run-script test
 ```
 
+[mongo-collection]: http://php.net/manual/en/class.mongocollection.php
+[mongodb-collection]: https://docs.mongodb.com/php-library/master/reference/class/MongoDBCollection/
+[mongodb-database]: https://docs.mongodb.com/php-library/master/reference/class/MongoDBDatabase/
