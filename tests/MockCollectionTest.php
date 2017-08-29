@@ -503,7 +503,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['foo' => 'baz', 'bar' => 2],
         ]);
 
-        $regex = new Regex('Foo', 'i');
+        $regex = new Regex('^Foo', 'i');
         $result = $this->col->findOne(['foo' => $regex]);
 
         assertThat($result['foo'], equalTo('foo'));
