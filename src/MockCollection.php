@@ -454,7 +454,7 @@ class MockCollection extends Collection
 
         if ($constraint instanceof Regex) {
             return function ($val) use ($constraint): bool {
-                $pattern = preg_quote($constraint->getPattern(), '#');
+                $pattern = str_replace('#', '\\#', $constraint->getPattern());
                 return preg_match('#' . $pattern . '#' . $constraint->getFlags(), $val);
             };
         }
