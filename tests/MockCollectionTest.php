@@ -410,6 +410,24 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
     /**
      * @depends testInsertManyInsertsDocuments
      */
+    public function testFindCanLimitResults()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 3],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+        $result = $this->col->find([], ['sort' => ['bar' => 1], 'limit' => 2]);
+        $result = iterator_to_array($result);
+
+        assertThat(count($result), equalTo(2));
+        assertThat($result[0]['bar'], equalTo(1));
+        assertThat($result[1]['bar'], equalTo(2));
+    }
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
     public function testFindWorksWithCallableOperators()
     {
         $this->col->insertMany([
@@ -525,7 +543,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
 
         assertThat($result['foo'], equalTo('#'));
     }
-    
+
     /**
      * @depends testInsertManyInsertsDocuments
      */
@@ -542,7 +560,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
 
         assertThat($result, equalTo(null));
     }
-    
+
     /**
      * @depends testInsertManyInsertsDocuments
      */
@@ -557,7 +575,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $result = $this->col->findOne(['$and' => [['foo' => 'foo'], ['bar' => 3]]]);
         assertThat($result['foo'], equalTo('foo'));
     }
-    
+
     /**
      * @depends testInsertManyInsertsDocuments
      */
@@ -572,7 +590,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $result = $this->col->findOne(['$and' => [['foo' => 'foo'], ['bar' => 1]]]);
         assertThat($result, equalTo(null));
     }
-    
+
     /**
      * @depends testInsertManyInsertsDocuments
      */
@@ -591,7 +609,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         assertThat($result[0]['foo'], equalTo('foo'));
         assertThat($result[1]['foo'], equalTo('baz'));
     }
-    
+
     /**
      * @depends testInsertManyInsertsDocuments
      */
@@ -604,7 +622,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         ]);
 
         $result = $this->col->find(['$or' => [
-            ['$and' => [['foo' => 'foo'], ['bar' => '3']]], 
+            ['$and' => [['foo' => 'foo'], ['bar' => '3']]],
             ['$and' => [['foo' => 'baz'], ['bar' => '2']]],
         ]]);
 
@@ -614,7 +632,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         assertThat($result[0]['foo'], equalTo('foo'));
         assertThat($result[1]['foo'], equalTo('baz'));
     }
-    
+
     /**
      * @depends testInsertManyInsertsDocuments
      */
@@ -627,7 +645,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         ]);
 
         $result = $this->col->find(['$and' => [
-            ['$or' => [['foo' => 1], ['foo' => 'foo']]], 
+            ['$or' => [['foo' => 1], ['foo' => 'foo']]],
             ['$or' => [['bar' => 'foo'], ['bar' => 3]]],
         ]]);
 
@@ -636,7 +654,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         assertThat(count($result), equalTo(1));
         assertThat($result[0]['foo'], equalTo('foo'));
     }
-    
+
     /**
      * @depends testInsertManyInsertsDocuments
      */
@@ -653,7 +671,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         );
         assertThat($result['foo'], equalTo('foo'));
     }
-    
+
     /**
      * @depends testInsertManyInsertsDocuments
      */
@@ -676,7 +694,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         assertThat($result[0]['foo'], equalTo('for'));
         assertThat($result[1]['foo'], equalTo('foo'));
         assertThat($result[2]['foo'], equalTo('bar'));
-    }    
+    }
 
     /**
      * @depends testInsertManyInsertsDocuments
@@ -691,7 +709,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         ]);
 
         $result = $this->col->find(['$or' => [
-            ['bar' => ['$lte' => 1]], 
+            ['bar' => ['$lte' => 1]],
             ['bar' => ['$gte' => 3]]
         ]]);
 
@@ -702,7 +720,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         assertThat($result[1]['foo'], equalTo('foo'));
         assertThat($result[2]['foo'], equalTo('bar'));
     }
-    
+
     /**
      * @depends testInsertManyInsertsDocuments
      */
@@ -723,7 +741,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         assertThat(count($result), equalTo(1));
         assertThat($result[0]['foo'], equalTo('foo'));
     }
-    
+
     /**
      * @depends testInsertManyInsertsDocuments
      */

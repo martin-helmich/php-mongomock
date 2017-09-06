@@ -211,11 +211,21 @@ class MockCollection extends Collection
             });
         }
 
+        if (isset($options['limit'])) {
+            $limit = $options['limit'] !== 0 ? $options['limit'] : null;
+        }
+
         $cursor = [];
         foreach ($collectionCopy as $doc) {
             if ($matcher($doc)) {
                 if ($skip-- > 0) {
                     continue;
+                }
+                if (isset($limit)) {
+                    if($limit === 0) {
+                        break;
+                    }
+                    $limit--;
                 }
 
                 $cursor[] = $doc;
