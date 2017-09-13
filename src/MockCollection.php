@@ -11,6 +11,7 @@ use MongoDB\BSON\ObjectID;
 use MongoDB\BSON\Regex;
 use MongoDB\Collection;
 use MongoDB\Model\BSONDocument;
+use MongoDB\Model\BSONArray;
 
 /**
  * A mocked MongoDB collection
@@ -61,14 +62,35 @@ class MockCollection extends Collection
     /** @var MockDatabase */
     private $db;
 
+    /** @var array */
+    private $options = [];
+
+    /** @var array */
+    private $typeMap = [
+        'array' => BSONArray::class,
+        'document' => BSONDocument::class,
+        'root' => BSONDocument::class
+    ];
+
     /**
      * @param string $name
      * @param MockDatabase $db
      */
-    public function __construct(string $name = 'collection', MockDatabase $db = null)
+    public function __construct(string $name = 'collection', MockDatabase $db = null, array $options = [])
     {
         $this->name = $name;
         $this->db = $db;
+        $this->options = $options;
+
+        if($db !== null) {
+            $this->options = array_merge($db->getOptions(), $options);
+        } else {
+            $this->options = $options;
+        }
+
+        if(isset($this->options['typeMap'])) {
+            $this->typeMap = $this->options['typeMap'];
+        }
     }
 
     public function insertOne($document, array $options = [])
@@ -180,6 +202,12 @@ class MockCollection extends Collection
 
     public function find($filter = [], array $options = []): MockCursor
     {
+        if(isset($options['typeMap'])) {
+            $typeMap = array_merge($this->typeMap, $options['typeMap']);
+        } else {
+            $typeMap = $this->typeMap;
+        }
+
         // record query for future assertions
         $this->queries[] = new Query($filter, $options);
 
@@ -218,7 +246,7 @@ class MockCollection extends Collection
                     continue;
                 }
 
-                $cursor[] = $doc;
+                $cursor[] = $this->typeMap($doc, $typeMap);
             }
         }
 
@@ -232,6 +260,31 @@ class MockCollection extends Collection
             return $result;
         }
         return null;
+    }
+
+    private function typeMap(BSONDocument $doc, array $typeMap)
+    {
+        $doc =  $this->typeMapArray($doc, $typeMap);
+        
+        if($typeMap['document'] === 'array') {
+            $doc = $doc->getArrayCopy();
+        } elseif($typeMap['document'] !== BSONDocument::class) {
+            $doc = new $typeMap['document']($doc->getArrayCopy());
+        }
+
+        return $doc;
+    }
+
+    private function typeMapArray($doc, array $typeMap)
+    {
+        foreach($doc as $key => &$value) {
+            if(is_array($value) && $typeMap['array'] !== 'array') {
+                $value = $this->typeMapArray($value, $typeMap);
+                $value = new $typeMap['array']($value);
+            }
+        }
+
+        return $doc;
     }
 
     public function count($filter = [], array $options = [])

@@ -24,13 +24,27 @@ class MockDatabase extends Database
 
     /** @var Collection **/
     private $collections = [];
+    
+    /** @var array **/
+    private $options = [];
 
     /**
      * @param string $name
      */
-    public function __construct(string $name = 'database')
+    public function __construct(string $name = 'database', array $options = [])
     {
         $this->name = $name;
+        $this->options = $options;
+    }
+
+    /**
+     * Get options
+     *
+     * @return array
+     */
+    public function getOptions()
+    {
+        return $this->options;
     }
 
     /**
