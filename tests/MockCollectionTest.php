@@ -9,6 +9,7 @@ use MongoDB\Collection;
 use MongoDB\InsertManyResult;
 use MongoDB\InsertOneResult;
 use MongoDB\Model\BSONDocument;
+use MongoDB\Model\BSONArray;
 
 class MockCollectionTest extends \PHPUnit_Framework_TestCase
 {
@@ -44,6 +45,92 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $find = $this->col->findOne(['_id' => $result->getInsertedId()]);
 
         assertThat($find, isInstanceOf(BSONDocument::class));
+    }
+
+    /**
+     * @depends testInsertOneInsertsDocument
+     */
+    public function testFinddOneDocumentArrayField()
+    {
+        $result = $this->col->insertOne(['foo' => [1,2,3]]);
+        $find = $this->col->findOne(['_id' => $result->getInsertedId()]);
+
+        assertThat($find['foo'], isInstanceOf(BSONArray::class));
+    }
+    
+    /**
+     * @depends testInsertOneInsertsDocument
+     */
+    public function testFindOneDocumentDeepArrayField()
+    {
+        $result = $this->col->insertOne(['foo' => [0 => [1,2,3],2,3]]);
+        $find = $this->col->findOne(['_id' => $result->getInsertedId()]);
+
+        assertThat($find['foo'][0], isInstanceOf(BSONArray::class));
+    }
+
+    /**
+     * @depends testInsertOneInsertsDocument
+     */
+    public function testFindOneDocumentTypeMapArrayFromCollection()
+    {
+        $col = new MockCollection('test', null, [
+            'typeMap' => [
+                'root' => 'array',
+                'document' => 'array',
+                'array' => 'array'
+            ]
+        ]);
+        $result = $col->insertOne(['foo' => [0 => [1,2,3],2,3]]);
+        $find = $col->findOne(['_id' => $result->getInsertedId()]);
+
+        assertThat(is_array($find), isTrue());
+        assertThat(is_array($find['foo']), isTrue());
+        assertThat(is_array($find['foo'][0]), isTrue());
+    }
+
+    /**
+     * @depends testInsertOneInsertsDocument
+     */
+    public function testFindOneDocumentTypeMapArray()
+    {
+        $result = $this->col->insertOne(['foo' => [0 => [1,2,3]]]);
+        $find = $this->col->findOne(['_id' => $result->getInsertedId()],[
+            'typeMap' => [
+                'root' => 'array',
+                'document' => 'array',
+                'array' => 'array'
+            ]
+        ]);
+
+        assertThat(is_array($find), isTrue());
+        assertThat(is_array($find['foo']), isTrue());
+        assertThat(is_array($find['foo'][0]), isTrue());
+    }
+    
+    /**
+     * @depends testInsertOneInsertsDocument
+     */
+    public function testFindManyDocumentTypeMapArrayFromCollection()
+    {
+        $col = new MockCollection('test', null, [
+            'typeMap' => [
+                'root' => 'array',
+                'document' => 'array',
+                'array' => 'array'
+            ]
+        ]);
+        
+        $col->insertMany([
+            ['foo' => 'foo', 'bar' => 1],
+            ['foo' => 'bar', 'bar' => 1],
+        ]);
+
+        $find = $col->find();
+        $result = iterator_to_array($find);
+
+        assertThat(is_array($result[0]), isTrue());
+        assertThat(is_array($result[1]), isTrue());
     }
 
     /**
