@@ -3,6 +3,10 @@ namespace Helmich\MongoMock;
 
 use MongoDB\Collection;
 use MongoDB\Database;
+use MongoDB\Model\CollectionInfoLegacyIterator;
+use MongoDB\Model\CollectionInfo;
+use MongoDB\Driver\Exception\RuntimeException;
+use ArrayIterator;
 
 /**
  * A mocked MongoDB database
@@ -24,7 +28,7 @@ class MockDatabase extends Database
 
     /** @var Collection **/
     private $collections = [];
-    
+
     /** @var array **/
     private $options = [];
 
@@ -48,6 +52,26 @@ class MockDatabase extends Database
     }
 
     /**
+     * List collections
+     *
+     * @param  array $options
+     * @return CollectionInfoLegacyIterator
+     */
+    public function listCollections(array $options = [])
+    {
+        $collections = [];
+        foreach($this->collections as $name => $collection) {
+            $collections[] = [
+                'name' => $this->name.'.'.$name,
+                'options' => $collection['options']
+            ];
+        }
+
+        return new CollectionInfoLegacyIterator(new ArrayIterator($collections));
+    }
+
+
+    /**
      * Return the database name.
      *
      * @return string
@@ -56,10 +80,20 @@ class MockDatabase extends Database
     {
         return $this->name;
     }
-        
+
+    /**
+     * Returns the database name.
+     *
+     * @return string
+     */
+    public function getDatabaseName()
+    {
+        return $this->name;
+    }
+
     /**
      * Return collection
-     * 
+     *
      * @param  string $name
      * @return Collection
      */
@@ -67,19 +101,42 @@ class MockDatabase extends Database
     {
         return $this->selectCollection($name);
     }
-    
+
+    /**
+     * Create collection
+     *
+     * @param string $name
+     * @param array $options
+     * @return array
+     */
+    public function createCollection($name, array $options = [])
+    {
+        if(isset($this->collections[$name])) {
+            throw new RuntimeException('collection already exists');
+        }
+
+        $this->collections[$name] = [
+            'collection' => new MockCollection($name, $this),
+            'options' => $options
+        ];
+
+        return [
+            'ok' => 1.0
+        ];
+    }
+
     /**
      * Return collection
-     * 
+     *
      * @param  string $name
      * @param  array  $options
      * @return Collection
-     */    
+     */
     public function selectCollection($name, array $options = [])
     {
         if (!isset($this->collections[$name])) {
-            $this->collections[$name] = new MockCollection($name, $this);
+            $this->createCollection($name);
         }
-        return $this->collections[$name];
+        return $this->collections[$name]['collection'];
     }
 }

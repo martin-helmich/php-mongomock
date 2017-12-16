@@ -12,6 +12,8 @@ use MongoDB\BSON\Regex;
 use MongoDB\Collection;
 use MongoDB\Model\BSONDocument;
 use MongoDB\Model\BSONArray;
+use MongoDB\Model\IndexInfoIteratorIterator;
+use ArrayIterator;
 
 /**
  * A mocked MongoDB collection
@@ -275,7 +277,7 @@ class MockCollection extends Collection
     private function typeMap(BSONDocument $doc, array $typeMap)
     {
         $doc =  $this->typeMapArray($doc, $typeMap);
-        
+
         if($typeMap['document'] === 'array') {
             $doc = $doc->getArrayCopy();
         } elseif($typeMap['document'] !== BSONDocument::class) {
@@ -311,7 +313,20 @@ class MockCollection extends Collection
 
     public function createIndex($key, array $options = [])
     {
-        $this->indices[] = new Index($key, $options);
+        $name = '';
+        if(is_string($key)) {
+            $name = $key.'_1';
+        } elseif(is_array($key)) {
+            foreach($key as $field => $enabled) {
+                if(strlen($name) !== 0) {
+                    $name .= '_';
+                }
+
+                $name .= $field.'_1';
+            }
+        }
+
+        $this->indices[$name] = new Index($key, $options);
     }
 
     public function drop(array $options = [])
@@ -402,7 +417,18 @@ class MockCollection extends Collection
 
     public function listIndexes(array $options = [])
     {
-        // TODO: Implement this function
+        $indices = [];
+        foreach($this->indices as $name => $index) {
+            $indices[] = [
+                'v' => 1,
+                'unique' => isset($index->getOptions()['unique']) ? $index->getOptions()['unique'] : false,
+                'key' => $index->getKey(),
+                'name' => $name,
+                'ns' => $this->db->getDatabaseName().'.'.$this->name
+            ];
+        }
+
+        return new IndexInfoIteratorIterator(new ArrayIterator($indices));
     }
 
     public function replaceOne($filter, $replacement, array $options = [])

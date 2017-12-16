@@ -14,4 +14,14 @@ class Index
         $this->key = $key;
         $this->options = $options;
     }
+
+    public function getKey()
+    {
+        return $this->key;
+    }
+
+    public function getOptions()
+    {
+        return $this->options;
+    }
 }
