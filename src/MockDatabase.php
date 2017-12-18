@@ -1,12 +1,12 @@
 <?php
+
 namespace Helmich\MongoMock;
 
+use ArrayIterator;
 use MongoDB\Collection;
 use MongoDB\Database;
-use MongoDB\Model\CollectionInfoLegacyIterator;
-use MongoDB\Model\CollectionInfo;
 use MongoDB\Driver\Exception\RuntimeException;
-use ArrayIterator;
+use MongoDB\Model\CollectionInfoLegacyIterator;
 
 /**
  * A mocked MongoDB database
@@ -26,10 +26,10 @@ class MockDatabase extends Database
     /** @var string */
     private $name;
 
-    /** @var Collection **/
+    /** @var Collection * */
     private $collections = [];
 
-    /** @var array **/
+    /** @var array * */
     private $options = [];
 
     /**
@@ -60,9 +60,9 @@ class MockDatabase extends Database
     public function listCollections(array $options = [])
     {
         $collections = [];
-        foreach($this->collections as $name => $collection) {
+        foreach ($this->collections as $name => $collection) {
             $collections[] = [
-                'name' => $this->name.'.'.$name,
+                'name' => $this->name . '.' . $name,
                 'options' => $collection['options']
             ];
         }
@@ -106,12 +106,12 @@ class MockDatabase extends Database
      * Create collection
      *
      * @param string $name
-     * @param array $options
+     * @param array  $options
      * @return array
      */
     public function createCollection($name, array $options = [])
     {
-        if(isset($this->collections[$name])) {
+        if (isset($this->collections[$name])) {
             throw new RuntimeException('collection already exists');
         }
 
