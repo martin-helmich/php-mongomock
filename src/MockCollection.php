@@ -60,7 +60,7 @@ class MockCollection extends Collection
     /** @var string */
     private $name;
 
-    /** @var MockDatabase */
+    /** @var MockDatabase|null */
     private $db;
 
     /** @var array */
@@ -417,13 +417,15 @@ class MockCollection extends Collection
     public function listIndexes(array $options = [])
     {
         $indices = [];
+        $dbName = $this->db ? $this->db->getDatabaseName() : "unknown";
+
         foreach ($this->indices as $name => $index) {
             $indices[] = [
-                'v' => 1,
+                'v'      => 1,
                 'unique' => isset($index->getOptions()['unique']) ? $index->getOptions()['unique'] : false,
-                'key' => $index->getKey(),
-                'name' => $name,
-                'ns' => $this->db->getDatabaseName() . '.' . $this->name
+                'key'    => $index->getKey(),
+                'name'   => $name,
+                'ns'     => $dbName . '.' . $this->name,
             ];
         }
 

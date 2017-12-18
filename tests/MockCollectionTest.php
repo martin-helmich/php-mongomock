@@ -875,4 +875,38 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         assertThat($col->getCollectionName(), equalTo('foo'));
     }
 
+    public function testCreateIndexRegistersIndex()
+    {
+        $col = new MockCollection('foo');
+        $col->createIndex('foo', ['unique' => true]);
+        $col->createIndex('bar');
+
+        $indices = iterator_to_array($col->listIndexes());
+
+        assertThat(count($indices), equalTo(2));
+
+        $first = $indices[0];
+        $second = $indices[1];
+
+        assertThat($first['unique'], isTrue());
+        assertThat($second['unique'], isFalse());
+        assertThat($first['key'], equalTo('foo'));
+    }
+
+    public function testCreateIndexRegistersMultifieldIndex()
+    {
+        $col = new MockCollection('foo');
+        $col->createIndex(['foo' => 1, 'bar' => -1], ['unique' => true]);
+
+        $indices = iterator_to_array($col->listIndexes());
+
+        assertThat(count($indices), equalTo(1));
+
+        $first = $indices[0];
+
+        assertThat($first['unique'], isTrue());
+        assertThat($first['key'], equalTo(['foo' => 1, 'bar' => -1]));
+        assertThat($first['name'], equalTo('foo_1_bar_1'));
+    }
+
 }
