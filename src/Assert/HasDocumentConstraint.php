@@ -1,7 +1,7 @@
 <?php
+
 namespace Helmich\MongoMock\Assert;
 
-use Helmich\MongoMock\Log\Index;
 use Helmich\MongoMock\MockCollection;
 
 class HasDocumentConstraint extends \PHPUnit_Framework_Constraint

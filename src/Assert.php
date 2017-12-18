@@ -1,4 +1,5 @@
 <?php
+
 namespace Helmich\MongoMock;
 
 use Helmich\MongoMock\Assert\HasDocumentConstraint;

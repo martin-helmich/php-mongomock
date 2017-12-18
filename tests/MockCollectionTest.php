@@ -1,4 +1,5 @@
 <?php
+
 namespace Helmich\MongoMock\Tests;
 
 use Helmich\MongoMock\MockCollection;
@@ -8,8 +9,8 @@ use MongoDB\BSON\Regex;
 use MongoDB\Collection;
 use MongoDB\InsertManyResult;
 use MongoDB\InsertOneResult;
-use MongoDB\Model\BSONDocument;
 use MongoDB\Model\BSONArray;
+use MongoDB\Model\BSONDocument;
 
 class MockCollectionTest extends \PHPUnit_Framework_TestCase
 {
@@ -52,18 +53,18 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
      */
     public function testFinddOneDocumentArrayField()
     {
-        $result = $this->col->insertOne(['foo' => [1,2,3]]);
+        $result = $this->col->insertOne(['foo' => [1, 2, 3]]);
         $find = $this->col->findOne(['_id' => $result->getInsertedId()]);
 
         assertThat($find['foo'], isInstanceOf(BSONArray::class));
     }
-    
+
     /**
      * @depends testInsertOneInsertsDocument
      */
     public function testFindOneDocumentDeepArrayField()
     {
-        $result = $this->col->insertOne(['foo' => [0 => [1,2,3],2,3]]);
+        $result = $this->col->insertOne(['foo' => [0 => [1, 2, 3], 2, 3]]);
         $find = $this->col->findOne(['_id' => $result->getInsertedId()]);
 
         assertThat($find['foo'][0], isInstanceOf(BSONArray::class));
@@ -81,7 +82,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
                 'array' => 'array'
             ]
         ]);
-        $result = $col->insertOne(['foo' => [0 => [1,2,3],2,3]]);
+        $result = $col->insertOne(['foo' => [0 => [1, 2, 3], 2, 3]]);
         $find = $col->findOne(['_id' => $result->getInsertedId()]);
 
         assertThat(is_array($find), isTrue());
@@ -94,8 +95,8 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
      */
     public function testFindOneDocumentTypeMapArray()
     {
-        $result = $this->col->insertOne(['foo' => [0 => [1,2,3]]]);
-        $find = $this->col->findOne(['_id' => $result->getInsertedId()],[
+        $result = $this->col->insertOne(['foo' => [0 => [1, 2, 3]]]);
+        $find = $this->col->findOne(['_id' => $result->getInsertedId()], [
             'typeMap' => [
                 'root' => 'array',
                 'document' => 'array',
@@ -107,7 +108,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         assertThat(is_array($find['foo']), isTrue());
         assertThat(is_array($find['foo'][0]), isTrue());
     }
-    
+
     /**
      * @depends testInsertOneInsertsDocument
      */
@@ -120,7 +121,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
                 'array' => 'array'
             ]
         ]);
-        
+
         $col->insertMany([
             ['foo' => 'foo', 'bar' => 1],
             ['foo' => 'bar', 'bar' => 1],
@@ -322,7 +323,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         assertThat($this->col->count(['bar' => 2]), equalTo(1));
     }
 
-    public function updateUpsertCore( $x1, $x2, $x3 )
+    public function updateUpsertCore($x1, $x2, $x3)
     {
         $this->col->insertMany([
             ['foo' => 'foo', 'bar' => 1],
@@ -348,13 +349,13 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
 
         $this->col->updateOne(['bar' => 4], $x3, ['upsert' => true]);
         assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(1));
-        if(array_key_exists('$set',$x3)) {
+        if (array_key_exists('$set', $x3)) {
             assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(1));
         } else {
             assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(2));
         }
         assertThat($this->col->count(['bar' => 2]), equalTo(1));
-        if(array_key_exists('$set',$x3)) {
+        if (array_key_exists('$set', $x3)) {
             assertThat($this->col->count(['bar' => 4]), equalTo(1));
         } else {
             assertThat($this->col->count(['bar' => 4]), equalTo(0));
@@ -404,7 +405,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['foo' => 'yoo', 'bar' => 3],
         ]);
         $this->col->updateMany(
-            ['bar' => ['$in' => [1,3]]],
+            ['bar' => ['$in' => [1, 3]]],
             ['$set' => ['foo' => 'Kekse']],
             ['upsert' => true]);
 
@@ -523,7 +524,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['foo' => 'baz', 'bar' => 2],
         ]);
         $result = $this->col->find([
-            'foo' => function($var): bool {
+            'foo' => function ($var): bool {
                 return $var == 'bar';
             }
         ]);
@@ -872,6 +873,40 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
     {
         $col = new MockCollection('foo');
         assertThat($col->getCollectionName(), equalTo('foo'));
+    }
+
+    public function testCreateIndexRegistersIndex()
+    {
+        $col = new MockCollection('foo');
+        $col->createIndex('foo', ['unique' => true]);
+        $col->createIndex('bar');
+
+        $indices = iterator_to_array($col->listIndexes());
+
+        assertThat(count($indices), equalTo(2));
+
+        $first = $indices[0];
+        $second = $indices[1];
+
+        assertThat($first['unique'], isTrue());
+        assertThat($second['unique'], isFalse());
+        assertThat($first['key'], equalTo('foo'));
+    }
+
+    public function testCreateIndexRegistersMultifieldIndex()
+    {
+        $col = new MockCollection('foo');
+        $col->createIndex(['foo' => 1, 'bar' => -1], ['unique' => true]);
+
+        $indices = iterator_to_array($col->listIndexes());
+
+        assertThat(count($indices), equalTo(1));
+
+        $first = $indices[0];
+
+        assertThat($first['unique'], isTrue());
+        assertThat($first['key'], equalTo(['foo' => 1, 'bar' => -1]));
+        assertThat($first['name'], equalTo('foo_1_bar_1'));
     }
 
 }

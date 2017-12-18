@@ -2,7 +2,7 @@
 
 namespace Helmich\MongoMock;
 
-use \Iterator;
+use Iterator;
 
 class MockCursor implements Iterator
 {

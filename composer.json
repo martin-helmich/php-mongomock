@@ -33,8 +33,7 @@
   },
   "scripts": {
     "test": [
-        "phpunit"
+      "phpunit"
     ]
   }
-
 }

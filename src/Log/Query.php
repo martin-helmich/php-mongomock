@@ -1,4 +1,5 @@
 <?php
+
 namespace Helmich\MongoMock\Log;
 
 class Query

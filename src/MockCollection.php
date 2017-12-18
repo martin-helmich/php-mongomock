@@ -2,7 +2,7 @@
 
 namespace Helmich\MongoMock;
 
-use ArrayAccess;
+use ArrayIterator;
 use Helmich\MongoMock\Log\Index;
 use Helmich\MongoMock\Log\Query;
 use MongoDB\BSON;
@@ -10,10 +10,9 @@ use MongoDB\BSON\Binary;
 use MongoDB\BSON\ObjectID;
 use MongoDB\BSON\Regex;
 use MongoDB\Collection;
-use MongoDB\Model\BSONDocument;
 use MongoDB\Model\BSONArray;
+use MongoDB\Model\BSONDocument;
 use MongoDB\Model\IndexInfoIteratorIterator;
-use ArrayIterator;
 
 /**
  * A mocked MongoDB collection
@@ -61,7 +60,7 @@ class MockCollection extends Collection
     /** @var string */
     private $name;
 
-    /** @var MockDatabase */
+    /** @var MockDatabase|null */
     private $db;
 
     /** @var array */
@@ -75,7 +74,7 @@ class MockCollection extends Collection
     ];
 
     /**
-     * @param string $name
+     * @param string       $name
      * @param MockDatabase $db
      */
     public function __construct(string $name = 'collection', MockDatabase $db = null, array $options = [])
@@ -84,13 +83,13 @@ class MockCollection extends Collection
         $this->db = $db;
         $this->options = $options;
 
-        if($db !== null) {
+        if ($db !== null) {
             $this->options = array_merge($db->getOptions(), $options);
         } else {
             $this->options = $options;
         }
 
-        if(isset($this->options['typeMap'])) {
+        if (isset($this->options['typeMap'])) {
             $this->typeMap = $this->options['typeMap'];
         }
     }
@@ -204,7 +203,7 @@ class MockCollection extends Collection
 
     public function find($filter = [], array $options = []): MockCursor
     {
-        if(isset($options['typeMap'])) {
+        if (isset($options['typeMap'])) {
             $typeMap = array_merge($this->typeMap, $options['typeMap']);
         } else {
             $typeMap = $this->typeMap;
@@ -252,7 +251,7 @@ class MockCollection extends Collection
                     continue;
                 }
                 if (isset($limit)) {
-                    if($limit === 0) {
+                    if ($limit === 0) {
                         break;
                     }
                     $limit--;
@@ -276,11 +275,11 @@ class MockCollection extends Collection
 
     private function typeMap(BSONDocument $doc, array $typeMap)
     {
-        $doc =  $this->typeMapArray($doc, $typeMap);
+        $doc = $this->typeMapArray($doc, $typeMap);
 
-        if($typeMap['document'] === 'array') {
+        if ($typeMap['document'] === 'array') {
             $doc = $doc->getArrayCopy();
-        } elseif($typeMap['document'] !== BSONDocument::class) {
+        } elseif ($typeMap['document'] !== BSONDocument::class) {
             $doc = new $typeMap['document']($doc->getArrayCopy());
         }
 
@@ -289,8 +288,8 @@ class MockCollection extends Collection
 
     private function typeMapArray($doc, array $typeMap)
     {
-        foreach($doc as $key => &$value) {
-            if(is_array($value) && $typeMap['array'] !== 'array') {
+        foreach ($doc as $key => &$value) {
+            if (is_array($value) && $typeMap['array'] !== 'array') {
                 $value = $this->typeMapArray($value, $typeMap);
                 $value = new $typeMap['array']($value);
             }
@@ -314,15 +313,15 @@ class MockCollection extends Collection
     public function createIndex($key, array $options = [])
     {
         $name = '';
-        if(is_string($key)) {
-            $name = $key.'_1';
-        } elseif(is_array($key)) {
-            foreach($key as $field => $enabled) {
-                if(strlen($name) !== 0) {
+        if (is_string($key)) {
+            $name = $key . '_1';
+        } elseif (is_array($key)) {
+            foreach ($key as $field => $enabled) {
+                if (strlen($name) !== 0) {
                     $name .= '_';
                 }
 
-                $name .= $field.'_1';
+                $name .= $field . '_1';
             }
         }
 
@@ -418,13 +417,15 @@ class MockCollection extends Collection
     public function listIndexes(array $options = [])
     {
         $indices = [];
-        foreach($this->indices as $name => $index) {
+        $dbName = $this->db ? $this->db->getDatabaseName() : "unknown";
+
+        foreach ($this->indices as $name => $index) {
             $indices[] = [
-                'v' => 1,
+                'v'      => 1,
                 'unique' => isset($index->getOptions()['unique']) ? $index->getOptions()['unique'] : false,
-                'key' => $index->getKey(),
-                'name' => $name,
-                'ns' => $this->db->getDatabaseName().'.'.$this->name
+                'key'    => $index->getKey(),
+                'name'   => $name,
+                'ns'     => $dbName . '.' . $this->name,
             ];
         }
 
