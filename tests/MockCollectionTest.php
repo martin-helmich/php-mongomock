@@ -9,6 +9,7 @@ use MongoDB\BSON\Regex;
 use MongoDB\Collection;
 use MongoDB\InsertManyResult;
 use MongoDB\InsertOneResult;
+use MongoDB\UpdateResult;
 use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
 
@@ -221,7 +222,8 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['foo' => 'bar', 'bar' => 1],
             ['foo' => 'baz', 'bar' => 2],
         ]);
-        $this->col->updateOne(['bar' => 1], ['$set' => ['foo' => 'Kekse']]);
+        $result = $this->col->updateOne(['bar' => 1], ['$set' => ['foo' => 'Kekse']]);
+        assertThat($result, isInstanceOf(UpdateResult::class));
 
         assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(1));
         assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(1));
@@ -275,7 +277,8 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['foo' => 'bar', 'bar' => 1],
             ['foo' => 'baz', 'bar' => 2],
         ]);
-        $this->col->updateMany(['bar' => 1], ['$set' => ['foo' => 'Kekse']]);
+        $result = $this->col->updateMany(['bar' => 1], ['$set' => ['foo' => 'Kekse']]);
+        assertThat($result, isInstanceOf(UpdateResult::class));
 
         assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(2));
         assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(0));
