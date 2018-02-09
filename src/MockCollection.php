@@ -143,27 +143,31 @@ class MockCollection extends Collection
         foreach ($this->documents as $i => &$doc) {
             if ($matcher($doc)) {
                 $this->updateCore($doc, $update);
-                return;
+                return new MockUpdateResult(1, 1);
             }
         }
-        $this->updateUpsert($filter, $update, $options, false);
+
+        $result = $this->updateUpsert($filter, $update, $options, false);
+        $upserted = $result === null ? [] : $result->getInsertedIds();
+        return new MockUpdateResult(0, 0, $upserted);
     }
 
     public function updateMany($filter, $update, array $options = [])
     {
         $matcher = $this->matcherFromQuery($filter);
-        $anyUpdates = false;
+        $matched = 0;
         foreach ($this->documents as $i => &$doc) {
             if (!$matcher($doc)) {
                 continue;
             }
 
             $this->updateCore($doc, $update);
-            $anyUpdates = true;
+            $matched++;
         }
 
-        $this->updateUpsert($filter, $update, $options, $anyUpdates);
-        return $anyUpdates;
+        $result = $this->updateUpsert($filter, $update, $options, $matched !== 0);
+        $upserted = $result === null ? [] : $result->getInsertedIds();
+        return new MockUpdateResult($matched, $matched, $upserted);
     }
 
     private function updateUpsert($filter, $update, $options, $anyUpdates)
@@ -491,6 +495,8 @@ class MockCollection extends Collection
                     }
 
                     return false;
+                } elseif ($field === '$isolated') {
+                    return true;
                 } else {
                     // needed for case of $exists query filter and field is inexistant
                     $val = $this->getArrayValue($doc, $field);
