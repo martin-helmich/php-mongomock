@@ -13,6 +13,7 @@ use MongoDB\Collection;
 use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
 use MongoDB\Model\IndexInfoIteratorIterator;
+use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 
 /**
  * A mocked MongoDB collection
@@ -98,6 +99,14 @@ class MockCollection extends Collection
     {
         if (!isset($document['_id'])) {
             $document['_id'] = new ObjectID();
+        } else {
+            // make sure document with the same id does not exist
+            foreach ($this->documents as $doc) {
+                // if document with the same id already exists
+                if ($doc['_id'] == $document['_id']) {
+                    throw new DriverRuntimeException();
+                }
+            }
         }
 
         if (!$document instanceof BSONDocument) {

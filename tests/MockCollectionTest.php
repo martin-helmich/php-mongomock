@@ -12,6 +12,7 @@ use MongoDB\InsertOneResult;
 use MongoDB\UpdateResult;
 use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
+use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 
 class MockCollectionTest extends \PHPUnit_Framework_TestCase
 {
@@ -36,6 +37,22 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
 
         assertThat($find, logicalNot(isNull()));
         assertThat($find['foo'], equalTo('bar'));
+    }
+
+    public function testInsertOneDocumentWithExistingId()
+    {
+        $result = $this->col->insertOne([
+            '_id' => 'baz',
+            'foo' => 'bar'
+        ]);
+
+        $this->expectException(DriverRuntimeException::class);
+        
+        // inserting a document with the same _id (baz)
+        $result = $this->col->insertOne([
+            '_id' => 'baz',
+            'bat' => 'dog'
+        ]);        
     }
 
     /**
