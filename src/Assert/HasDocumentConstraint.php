@@ -3,8 +3,9 @@
 namespace Helmich\MongoMock\Assert;
 
 use Helmich\MongoMock\MockCollection;
+use PHPUnit\Framework\Constraint\Constraint;
 
-class HasDocumentConstraint extends \PHPUnit_Framework_Constraint
+class HasDocumentConstraint extends Constraint
 {
 
     /**
@@ -18,7 +19,7 @@ class HasDocumentConstraint extends \PHPUnit_Framework_Constraint
         $this->filter = $filter;
     }
 
-    protected function matches($other)
+    protected function matches($other): bool
     {
         if (!$other instanceof MockCollection) {
             return false;
@@ -32,7 +33,7 @@ class HasDocumentConstraint extends \PHPUnit_Framework_Constraint
      *
      * @return string
      */
-    public function toString()
+    public function toString(): string
     {
         return 'has document that matches ' . json_encode($this->filter);
     }

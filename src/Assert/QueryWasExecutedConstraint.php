@@ -4,8 +4,10 @@ namespace Helmich\MongoMock\Assert;
 
 use Helmich\MongoMock\Log\Query;
 use Helmich\MongoMock\MockCollection;
+use PHPUnit\Framework\Assert;
+use PHPUnit\Framework\Constraint\Constraint;
 
-class QueryWasExecutedConstraint extends \PHPUnit_Framework_Constraint
+class QueryWasExecutedConstraint extends Constraint
 {
 
     /** @var array */
@@ -21,13 +23,13 @@ class QueryWasExecutedConstraint extends \PHPUnit_Framework_Constraint
         $this->options = $options;
     }
 
-    protected function matches($other)
+    protected function matches($other): bool
     {
         if (!$other instanceof MockCollection) {
             return false;
         }
 
-        $constraint = \PHPUnit_Framework_Assert::equalTo(new Query($this->filter, $this->options));
+        $constraint = Assert::equalTo(new Query($this->filter, $this->options));
 
         foreach ($other->queries as $query) {
             if ($constraint->evaluate($query, '', true)) {
@@ -43,7 +45,7 @@ class QueryWasExecutedConstraint extends \PHPUnit_Framework_Constraint
      *
      * @return string
      */
-    public function toString()
+    public function toString(): string
     {
         return 'executed query by ' . json_encode($this->filter);
     }
