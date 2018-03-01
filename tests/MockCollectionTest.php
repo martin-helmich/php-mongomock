@@ -13,8 +13,10 @@ use MongoDB\UpdateResult;
 use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Assert;
 
-class MockCollectionTest extends \PHPUnit_Framework_TestCase
+class MockCollectionTest extends TestCase
 {
     /** @var Collection */
     private $col;
@@ -28,15 +30,15 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
     {
         $result = $this->col->insertOne(['foo' => 'bar']);
 
-        assertThat($result, isInstanceOf(InsertOneResult::class));
-        assertThat($result->getInsertedCount(), equalTo(1));
-        assertThat($result->getInsertedId(), isInstanceOf(ObjectID::class));
-        assertThat($result->isAcknowledged(), isTrue());
+        TestCase::assertThat($result, Assert::isInstanceOf(InsertOneResult::class));
+        TestCase::assertThat($result->getInsertedCount(), Assert::equalTo(1));
+        TestCase::assertThat($result->getInsertedId(), Assert::isInstanceOf(ObjectID::class));
+        TestCase::assertThat($result->isAcknowledged(), Assert::isTrue());
 
         $find = $this->col->findOne(['_id' => $result->getInsertedId()]);
 
-        assertThat($find, logicalNot(isNull()));
-        assertThat($find['foo'], equalTo('bar'));
+        TestCase::assertThat($find, Assert::logicalNot(Assert::isNull()));
+        TestCase::assertThat($find['foo'], Assert::equalTo('bar'));
     }
 
     public function testInsertOneDocumentWithExistingId()
@@ -47,12 +49,12 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         ]);
 
         $this->expectException(DriverRuntimeException::class);
-        
+
         // inserting a document with the same _id (baz)
         $result = $this->col->insertOne([
             '_id' => 'baz',
             'bat' => 'dog'
-        ]);        
+        ]);
     }
 
     /**
@@ -63,7 +65,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $result = $this->col->insertOne(['foo' => 'bar']);
         $find = $this->col->findOne(['_id' => $result->getInsertedId()]);
 
-        assertThat($find, isInstanceOf(BSONDocument::class));
+        TestCase::assertThat($find, Assert::isInstanceOf(BSONDocument::class));
     }
 
     /**
@@ -74,7 +76,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $result = $this->col->insertOne(['foo' => [1, 2, 3]]);
         $find = $this->col->findOne(['_id' => $result->getInsertedId()]);
 
-        assertThat($find['foo'], isInstanceOf(BSONArray::class));
+        TestCase::assertThat($find['foo'], Assert::isInstanceOf(BSONArray::class));
     }
 
     /**
@@ -85,7 +87,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $result = $this->col->insertOne(['foo' => [0 => [1, 2, 3], 2, 3]]);
         $find = $this->col->findOne(['_id' => $result->getInsertedId()]);
 
-        assertThat($find['foo'][0], isInstanceOf(BSONArray::class));
+        TestCase::assertThat($find['foo'][0], Assert::isInstanceOf(BSONArray::class));
     }
 
     /**
@@ -95,17 +97,17 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
     {
         $col = new MockCollection('test', null, [
             'typeMap' => [
-                'root' => 'array',
+                'root'     => 'array',
                 'document' => 'array',
-                'array' => 'array'
+                'array'    => 'array'
             ]
         ]);
         $result = $col->insertOne(['foo' => [0 => [1, 2, 3], 2, 3]]);
         $find = $col->findOne(['_id' => $result->getInsertedId()]);
 
-        assertThat(is_array($find), isTrue());
-        assertThat(is_array($find['foo']), isTrue());
-        assertThat(is_array($find['foo'][0]), isTrue());
+        TestCase::assertThat(is_array($find), Assert::isTrue());
+        TestCase::assertThat(is_array($find['foo']), Assert::isTrue());
+        TestCase::assertThat(is_array($find['foo'][0]), Assert::isTrue());
     }
 
     /**
@@ -116,15 +118,15 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $result = $this->col->insertOne(['foo' => [0 => [1, 2, 3]]]);
         $find = $this->col->findOne(['_id' => $result->getInsertedId()], [
             'typeMap' => [
-                'root' => 'array',
+                'root'     => 'array',
                 'document' => 'array',
-                'array' => 'array'
+                'array'    => 'array'
             ]
         ]);
 
-        assertThat(is_array($find), isTrue());
-        assertThat(is_array($find['foo']), isTrue());
-        assertThat(is_array($find['foo'][0]), isTrue());
+        TestCase::assertThat(is_array($find), Assert::isTrue());
+        TestCase::assertThat(is_array($find['foo']), Assert::isTrue());
+        TestCase::assertThat(is_array($find['foo'][0]), Assert::isTrue());
     }
 
     /**
@@ -134,9 +136,9 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
     {
         $col = new MockCollection('test', null, [
             'typeMap' => [
-                'root' => 'array',
+                'root'     => 'array',
                 'document' => 'array',
-                'array' => 'array'
+                'array'    => 'array'
             ]
         ]);
 
@@ -148,8 +150,8 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $find = $col->find();
         $result = iterator_to_array($find);
 
-        assertThat(is_array($result[0]), isTrue());
-        assertThat(is_array($result[1]), isTrue());
+        TestCase::assertThat(is_array($result[0]), Assert::isTrue());
+        TestCase::assertThat(is_array($result[1]), Assert::isTrue());
     }
 
     /**
@@ -160,8 +162,8 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $result = $this->col->insertOne(new BSONDocument(['foo' => 'bar']));
         $find = $this->col->findOne(['_id' => $result->getInsertedId()]);
 
-        assertThat($find, isInstanceOf(BSONDocument::class));
-        assertThat($find['foo'], equalTo('bar'));
+        TestCase::assertThat($find, Assert::isInstanceOf(BSONDocument::class));
+        TestCase::assertThat($find['foo'], Assert::equalTo('bar'));
     }
 
     /**
@@ -172,11 +174,11 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $id = new ObjectID();
         $result = $this->col->insertOne(['_id' => $id, 'foo' => 'bar']);
 
-        assertThat($result->getInsertedId(), equalTo($id));
+        TestCase::assertThat($result->getInsertedId(), Assert::equalTo($id));
 
         $find = $this->col->findOne(['_id' => $id]);
-        assertThat($find, isInstanceOf(BSONDocument::class));
-        assertThat($find['foo'], equalTo('bar'));
+        TestCase::assertThat($find, Assert::isInstanceOf(BSONDocument::class));
+        TestCase::assertThat($find['foo'], Assert::equalTo('bar'));
     }
 
     public function testInsertManyInsertsDocuments()
@@ -187,14 +189,14 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['foo' => 'baz'],
         ]);
 
-        assertThat($result, isInstanceOf(InsertManyResult::class));
-        assertThat($result->getInsertedCount(), equalTo(3));
-        assertThat(count($result->getInsertedIds()), equalTo(3));
-        assertThat($result->isAcknowledged(), isTrue());
+        TestCase::assertThat($result, Assert::isInstanceOf(InsertManyResult::class));
+        TestCase::assertThat($result->getInsertedCount(), Assert::equalTo(3));
+        TestCase::assertThat(count($result->getInsertedIds()), Assert::equalTo(3));
+        TestCase::assertThat($result->isAcknowledged(), Assert::isTrue());
 
-        assertThat($this->col->count(['foo' => 'foo']), equalTo(1));
-        assertThat($this->col->count(['foo' => 'bar']), equalTo(1));
-        assertThat($this->col->count(['foo' => 'baz']), equalTo(1));
+        TestCase::assertThat($this->col->count(['foo' => 'foo']), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['foo' => 'bar']), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['foo' => 'baz']), Assert::equalTo(1));
     }
 
     /**
@@ -209,8 +211,8 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         ]);
         $this->col->deleteMany(['bar' => 1]);
 
-        assertThat($this->col->count(['bar' => 1]), equalTo(0));
-        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 1]), Assert::equalTo(0));
+        TestCase::assertThat($this->col->count(['bar' => 2]), Assert::equalTo(1));
     }
 
     /**
@@ -225,8 +227,8 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         ]);
         $this->col->deleteOne(['bar' => 1]);
 
-        assertThat($this->col->count(['bar' => 1]), equalTo(1));
-        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 1]), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 2]), Assert::equalTo(1));
     }
 
     /**
@@ -240,11 +242,11 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['foo' => 'baz', 'bar' => 2],
         ]);
         $result = $this->col->updateOne(['bar' => 1], ['$set' => ['foo' => 'Kekse']]);
-        assertThat($result, isInstanceOf(UpdateResult::class));
+        TestCase::assertThat($result, Assert::isInstanceOf(UpdateResult::class));
 
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(1));
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(1));
-        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 2]), Assert::equalTo(1));
     }
 
     /**
@@ -259,10 +261,10 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         ]);
         $this->col->updateOne(['bar' => 9], ['$set' => ['foo' => 'Kekse']]);
 
-        assertThat($this->col->count(['foo' => 'Kekse']), equalTo(0));
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'foo']), equalTo(1));
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(1));
-        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+        TestCase::assertThat($this->col->count(['foo' => 'Kekse']), Assert::equalTo(0));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'foo']), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 2]), Assert::equalTo(1));
     }
 
     /**
@@ -277,11 +279,11 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         ]);
         $this->col->updateOne(['bar' => 2], ['$unset' => ['foo' => '']]);
 
-        assertThat($this->col->count(['foo' => 'baz']), equalTo(0));
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'foo']), equalTo(1));
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(1));
-        assertThat($this->col->count(['bar' => 2]), equalTo(1));
-        assertThat($this->col->count(['bar' => 2, 'foo' => 'baz']), equalTo(0));
+        TestCase::assertThat($this->col->count(['foo' => 'baz']), Assert::equalTo(0));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'foo']), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 2]), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 2, 'foo' => 'baz']), Assert::equalTo(0));
     }
 
     /**
@@ -295,11 +297,11 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['foo' => 'baz', 'bar' => 2],
         ]);
         $result = $this->col->updateMany(['bar' => 1], ['$set' => ['foo' => 'Kekse']]);
-        assertThat($result, isInstanceOf(UpdateResult::class));
+        TestCase::assertThat($result, Assert::isInstanceOf(UpdateResult::class));
 
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(2));
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(0));
-        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), Assert::equalTo(2));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), Assert::equalTo(0));
+        TestCase::assertThat($this->col->count(['bar' => 2]), Assert::equalTo(1));
     }
 
     /**
@@ -313,17 +315,17 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['foo' => 'baz', 'bar' => 2],
         ]);
         $this->col->updateMany(['bar' => 1], ['$unset' => ['foo' => '']]);
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(0));
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(0));
-        assertThat($this->col->count(['bar' => 2]), equalTo(1));
-        assertThat($this->col->count(['bar' => 1]), equalTo(2));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), Assert::equalTo(0));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), Assert::equalTo(0));
+        TestCase::assertThat($this->col->count(['bar' => 2]), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 1]), Assert::equalTo(2));
 
         // test that inexistant fields do not affect result
         $this->col->updateMany(['bar' => 1], ['$unset' => ['inexistant' => '']]);
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(0));
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(0));
-        assertThat($this->col->count(['bar' => 2]), equalTo(1));
-        assertThat($this->col->count(['bar' => 1]), equalTo(2));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), Assert::equalTo(0));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), Assert::equalTo(0));
+        TestCase::assertThat($this->col->count(['bar' => 2]), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 1]), Assert::equalTo(2));
     }
 
     /**
@@ -338,9 +340,9 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         ]);
         $this->col->updateMany(['bar' => 1], ['$set' => ['foo' => 'Kekse']]);
 
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(2));
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(0));
-        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), Assert::equalTo(2));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), Assert::equalTo(0));
+        TestCase::assertThat($this->col->count(['bar' => 2]), Assert::equalTo(1));
     }
 
     public function updateUpsertCore($x1, $x2, $x3)
@@ -352,33 +354,33 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         ]);
 
         $this->col->updateMany(['bar' => 1], $x1, ['upsert' => true]);
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(2));
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(0));
-        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), Assert::equalTo(2));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), Assert::equalTo(0));
+        TestCase::assertThat($this->col->count(['bar' => 2]), Assert::equalTo(1));
 
         $this->col->updateMany(['bar' => 3], $x2, ['upsert' => true]);
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(2));
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(0));
-        assertThat($this->col->count(['bar' => 2]), equalTo(1));
-        assertThat($this->col->count(['bar' => 3]), equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), Assert::equalTo(2));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), Assert::equalTo(0));
+        TestCase::assertThat($this->col->count(['bar' => 2]), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 3]), Assert::equalTo(1));
 
         $this->col->updateOne(['bar' => 1], $x3, ['upsert' => true]);
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(1));
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(1));
-        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 2]), Assert::equalTo(1));
 
         $this->col->updateOne(['bar' => 4], $x3, ['upsert' => true]);
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), Assert::equalTo(1));
         if (array_key_exists('$set', $x3)) {
-            assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(1));
+            TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), Assert::equalTo(1));
         } else {
-            assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(2));
+            TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), Assert::equalTo(2));
         }
-        assertThat($this->col->count(['bar' => 2]), equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 2]), Assert::equalTo(1));
         if (array_key_exists('$set', $x3)) {
-            assertThat($this->col->count(['bar' => 4]), equalTo(1));
+            TestCase::assertThat($this->col->count(['bar' => 4]), Assert::equalTo(1));
         } else {
-            assertThat($this->col->count(['bar' => 4]), equalTo(0));
+            TestCase::assertThat($this->col->count(['bar' => 4]), Assert::equalTo(0));
         }
 
     }
@@ -429,11 +431,11 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['$set' => ['foo' => 'Kekse']],
             ['upsert' => true]);
 
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), equalTo(2));
-        assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), equalTo(0));
-        assertThat($this->col->count(['bar' => 2]), equalTo(1));
-        assertThat($this->col->count(['bar' => 3, 'foo' => 'Kekse']), equalTo(1));
-        assertThat($this->col->count(['bar' => 3, 'foo' => 'yoo']), equalTo(0));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), Assert::equalTo(2));
+        TestCase::assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), Assert::equalTo(0));
+        TestCase::assertThat($this->col->count(['bar' => 2]), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 3, 'foo' => 'Kekse']), Assert::equalTo(1));
+        TestCase::assertThat($this->col->count(['bar' => 3, 'foo' => 'yoo']), Assert::equalTo(0));
     }
 
     /**
@@ -449,10 +451,10 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $result = $this->col->find([], ['sort' => ['bar' => 1]]);
         $result = iterator_to_array($result);
 
-        assertThat(count($result), equalTo(3));
-        assertThat($result[0]['bar'], equalTo(1));
-        assertThat($result[1]['bar'], equalTo(2));
-        assertThat($result[2]['bar'], equalTo(3));
+        TestCase::assertThat(count($result), Assert::equalTo(3));
+        TestCase::assertThat($result[0]['bar'], Assert::equalTo(1));
+        TestCase::assertThat($result[1]['bar'], Assert::equalTo(2));
+        TestCase::assertThat($result[2]['bar'], Assert::equalTo(3));
     }
 
     /**
@@ -468,10 +470,10 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $result = $this->col->find([], ['sort' => ['bar' => -1]]);
         $result = iterator_to_array($result);
 
-        assertThat(count($result), equalTo(3));
-        assertThat($result[0]['bar'], equalTo(3));
-        assertThat($result[1]['bar'], equalTo(2));
-        assertThat($result[2]['bar'], equalTo(1));
+        TestCase::assertThat(count($result), Assert::equalTo(3));
+        TestCase::assertThat($result[0]['bar'], Assert::equalTo(3));
+        TestCase::assertThat($result[1]['bar'], Assert::equalTo(2));
+        TestCase::assertThat($result[2]['bar'], Assert::equalTo(1));
     }
 
     /**
@@ -488,13 +490,13 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $result = $this->col->find([], ['sort' => ['bar' => 1, 'foo' => -1]]);
         $result = iterator_to_array($result);
 
-        assertThat(count($result), equalTo(4));
-        assertThat($result[0]['bar'], equalTo(1));
-        assertThat($result[1]['bar'], equalTo(2));
-        assertThat($result[1]['foo'], equalTo('zab'));
-        assertThat($result[2]['bar'], equalTo(2));
-        assertThat($result[2]['foo'], equalTo('baz'));
-        assertThat($result[3]['bar'], equalTo(3));
+        TestCase::assertThat(count($result), Assert::equalTo(4));
+        TestCase::assertThat($result[0]['bar'], Assert::equalTo(1));
+        TestCase::assertThat($result[1]['bar'], Assert::equalTo(2));
+        TestCase::assertThat($result[1]['foo'], Assert::equalTo('zab'));
+        TestCase::assertThat($result[2]['bar'], Assert::equalTo(2));
+        TestCase::assertThat($result[2]['foo'], Assert::equalTo('baz'));
+        TestCase::assertThat($result[3]['bar'], Assert::equalTo(3));
     }
 
     /**
@@ -510,9 +512,9 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $result = $this->col->find([], ['sort' => ['bar' => 1], 'skip' => 1]);
         $result = iterator_to_array($result);
 
-        assertThat(count($result), equalTo(2));
-        assertThat($result[0]['bar'], equalTo(2));
-        assertThat($result[1]['bar'], equalTo(3));
+        TestCase::assertThat(count($result), Assert::equalTo(2));
+        TestCase::assertThat($result[0]['bar'], Assert::equalTo(2));
+        TestCase::assertThat($result[1]['bar'], Assert::equalTo(3));
     }
 
     /**
@@ -528,9 +530,9 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $result = $this->col->find([], ['sort' => ['bar' => 1], 'limit' => 2]);
         $result = iterator_to_array($result);
 
-        assertThat(count($result), equalTo(2));
-        assertThat($result[0]['bar'], equalTo(1));
-        assertThat($result[1]['bar'], equalTo(2));
+        TestCase::assertThat(count($result), Assert::equalTo(2));
+        TestCase::assertThat($result[0]['bar'], Assert::equalTo(1));
+        TestCase::assertThat($result[1]['bar'], Assert::equalTo(2));
     }
 
     /**
@@ -550,8 +552,8 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         ]);
         $result = iterator_to_array($result);
 
-        assertThat(count($result), equalTo(1));
-        assertThat($result[0]['foo'], equalTo('bar'));
+        TestCase::assertThat(count($result), Assert::equalTo(1));
+        TestCase::assertThat($result[0]['foo'], Assert::equalTo('bar'));
     }
 
     /**
@@ -565,12 +567,12 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['foo' => 'baz', 'bar' => 2],
         ]);
         $result = $this->col->find([
-            'foo' => equalTo('bar')
+            'foo' => 'bar'
         ]);
         $result = iterator_to_array($result);
 
-        assertThat(count($result), equalTo(1));
-        assertThat($result[0]['foo'], equalTo('bar'));
+        TestCase::assertThat(count($result), Assert::equalTo(1));
+        TestCase::assertThat($result[0]['foo'], Assert::equalTo('bar'));
     }
 
     /**
@@ -587,20 +589,20 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             'foo' => '$exists'
         ]);
         $result = iterator_to_array($result);
-        assertThat(count($result), equalTo(3));
+        TestCase::assertThat(count($result), Assert::equalTo(3));
 
         $result = $this->col->find([
             'krypton' => '$exists'
         ]);
         $result = iterator_to_array($result);
-        assertThat(count($result), equalTo(1));
-        assertThat($result[0]['foo'], equalTo('foo'));
+        TestCase::assertThat(count($result), Assert::equalTo(1));
+        TestCase::assertThat($result[0]['foo'], Assert::equalTo('foo'));
 
         $result = $this->col->find([
             'inexistant' => '$exists'
         ]);
         $result = iterator_to_array($result);
-        assertThat(count($result), equalTo(0));
+        TestCase::assertThat(count($result), Assert::equalTo(0));
     }
 
     /**
@@ -615,7 +617,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         ]);
         $result = $this->col->findOne(['bar' => ['$lt' => 3]], ['sort' => ['bar' => -1]]);
 
-        assertThat($result['foo'], equalTo('baz'));
+        TestCase::assertThat($result['foo'], Assert::equalTo('baz'));
     }
 
     /**
@@ -632,7 +634,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $regex = new Regex('^Foo', 'i');
         $result = $this->col->findOne(['foo' => $regex]);
 
-        assertThat($result['foo'], equalTo('foo'));
+        TestCase::assertThat($result['foo'], Assert::equalTo('foo'));
     }
 
     /**
@@ -649,7 +651,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $regex = new Regex('#', 'i');
         $result = $this->col->findOne(['foo' => $regex]);
 
-        assertThat($result['foo'], equalTo('#'));
+        TestCase::assertThat($result['foo'], Assert::equalTo('#'));
     }
 
     /**
@@ -666,7 +668,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $regex = new Regex('Foo');
         $result = $this->col->findOne(['foo' => $regex]);
 
-        assertThat($result, equalTo(null));
+        TestCase::assertThat($result, Assert::equalTo(null));
     }
 
     /**
@@ -681,7 +683,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         ]);
 
         $result = $this->col->findOne(['$and' => [['foo' => 'foo'], ['bar' => 3]]]);
-        assertThat($result['foo'], equalTo('foo'));
+        TestCase::assertThat($result['foo'], Assert::equalTo('foo'));
     }
 
     /**
@@ -696,7 +698,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         ]);
 
         $result = $this->col->findOne(['$and' => [['foo' => 'foo'], ['bar' => 1]]]);
-        assertThat($result, equalTo(null));
+        TestCase::assertThat($result, Assert::equalTo(null));
     }
 
     /**
@@ -711,11 +713,11 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         ]);
 
         $result = $this->col->find(['$or' => [['foo' => 'foo'], ['foo' => 'baz']]]);
-        assertThat($result, isInstanceOf(MockCursor::class));
+        TestCase::assertThat($result, Assert::isInstanceOf(MockCursor::class));
         $result = $result->toArray();
-        assertThat(count($result), equalTo(2));
-        assertThat($result[0]['foo'], equalTo('foo'));
-        assertThat($result[1]['foo'], equalTo('baz'));
+        TestCase::assertThat(count($result), Assert::equalTo(2));
+        TestCase::assertThat($result[0]['foo'], Assert::equalTo('foo'));
+        TestCase::assertThat($result[1]['foo'], Assert::equalTo('baz'));
     }
 
     /**
@@ -729,16 +731,18 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['foo' => 'baz', 'bar' => 2],
         ]);
 
-        $result = $this->col->find(['$or' => [
-            ['$and' => [['foo' => 'foo'], ['bar' => '3']]],
-            ['$and' => [['foo' => 'baz'], ['bar' => '2']]],
-        ]]);
+        $result = $this->col->find([
+            '$or' => [
+                ['$and' => [['foo' => 'foo'], ['bar' => '3']]],
+                ['$and' => [['foo' => 'baz'], ['bar' => '2']]],
+            ]
+        ]);
 
-        assertThat($result, isInstanceOf(MockCursor::class));
+        TestCase::assertThat($result, Assert::isInstanceOf(MockCursor::class));
         $result = $result->toArray();
-        assertThat(count($result), equalTo(2));
-        assertThat($result[0]['foo'], equalTo('foo'));
-        assertThat($result[1]['foo'], equalTo('baz'));
+        TestCase::assertThat(count($result), Assert::equalTo(2));
+        TestCase::assertThat($result[0]['foo'], Assert::equalTo('foo'));
+        TestCase::assertThat($result[1]['foo'], Assert::equalTo('baz'));
     }
 
     /**
@@ -752,15 +756,17 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['foo' => 'baz', 'bar' => 2],
         ]);
 
-        $result = $this->col->find(['$and' => [
-            ['$or' => [['foo' => 1], ['foo' => 'foo']]],
-            ['$or' => [['bar' => 'foo'], ['bar' => 3]]],
-        ]]);
+        $result = $this->col->find([
+            '$and' => [
+                ['$or' => [['foo' => 1], ['foo' => 'foo']]],
+                ['$or' => [['bar' => 'foo'], ['bar' => 3]]],
+            ]
+        ]);
 
-        assertThat($result, isInstanceOf(MockCursor::class));
+        TestCase::assertThat($result, Assert::isInstanceOf(MockCursor::class));
         $result = $result->toArray();
-        assertThat(count($result), equalTo(1));
-        assertThat($result[0]['foo'], equalTo('foo'));
+        TestCase::assertThat(count($result), Assert::equalTo(1));
+        TestCase::assertThat($result[0]['foo'], Assert::equalTo('foo'));
     }
 
     /**
@@ -777,7 +783,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         $result = $this->col->findOne(
             ['bar.foo' => 1]
         );
-        assertThat($result['foo'], equalTo('foo'));
+        TestCase::assertThat($result['foo'], Assert::equalTo('foo'));
     }
 
     /**
@@ -796,12 +802,12 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['bar' => ['$exists' => 1]]
         );
 
-        assertThat($result, isInstanceOf(MockCursor::class));
+        TestCase::assertThat($result, Assert::isInstanceOf(MockCursor::class));
         $result = $result->toArray();
-        assertThat(count($result), equalTo(3));
-        assertThat($result[0]['foo'], equalTo('for'));
-        assertThat($result[1]['foo'], equalTo('foo'));
-        assertThat($result[2]['foo'], equalTo('bar'));
+        TestCase::assertThat(count($result), Assert::equalTo(3));
+        TestCase::assertThat($result[0]['foo'], Assert::equalTo('for'));
+        TestCase::assertThat($result[1]['foo'], Assert::equalTo('foo'));
+        TestCase::assertThat($result[2]['foo'], Assert::equalTo('bar'));
     }
 
     /**
@@ -816,17 +822,19 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['foo' => 'baz', 'bar' => 2],
         ]);
 
-        $result = $this->col->find(['$or' => [
-            ['bar' => ['$lte' => 1]],
-            ['bar' => ['$gte' => 3]]
-        ]]);
+        $result = $this->col->find([
+            '$or' => [
+                ['bar' => ['$lte' => 1]],
+                ['bar' => ['$gte' => 3]]
+            ]
+        ]);
 
-        assertThat($result, isInstanceOf(MockCursor::class));
+        TestCase::assertThat($result, Assert::isInstanceOf(MockCursor::class));
         $result = $result->toArray();
-        assertThat(count($result), equalTo(3));
-        assertThat($result[0]['foo'], equalTo('for'));
-        assertThat($result[1]['foo'], equalTo('foo'));
-        assertThat($result[2]['foo'], equalTo('bar'));
+        TestCase::assertThat(count($result), Assert::equalTo(3));
+        TestCase::assertThat($result[0]['foo'], Assert::equalTo('for'));
+        TestCase::assertThat($result[1]['foo'], Assert::equalTo('foo'));
+        TestCase::assertThat($result[2]['foo'], Assert::equalTo('bar'));
     }
 
     /**
@@ -844,10 +852,10 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['bar' => ['$elemMatch' => ['$eq' => 3]]]
         );
 
-        assertThat($result, isInstanceOf(MockCursor::class));
+        TestCase::assertThat($result, Assert::isInstanceOf(MockCursor::class));
         $result = $result->toArray();
-        assertThat(count($result), equalTo(1));
-        assertThat($result[0]['foo'], equalTo('foo'));
+        TestCase::assertThat(count($result), Assert::equalTo(1));
+        TestCase::assertThat($result[0]['foo'], Assert::equalTo('foo'));
     }
 
     /**
@@ -866,12 +874,12 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             ['bar' => ['$elemMatch' => ['foobar' => ['$in' => [1, 3]]]]]
         );
 
-        assertThat($result, isInstanceOf(MockCursor::class));
+        TestCase::assertThat($result, Assert::isInstanceOf(MockCursor::class));
         $result = $result->toArray();
-        assertThat(count($result), equalTo(3));
-        assertThat($result[0]['foo'], equalTo('foo'));
-        assertThat($result[1]['foo'], equalTo('bar'));
-        assertThat($result[2]['foo'], equalTo('baz'));
+        TestCase::assertThat(count($result), Assert::equalTo(3));
+        TestCase::assertThat($result[0]['foo'], Assert::equalTo('foo'));
+        TestCase::assertThat($result[1]['foo'], Assert::equalTo('bar'));
+        TestCase::assertThat($result[2]['foo'], Assert::equalTo('baz'));
     }
 
     /**
@@ -886,13 +894,13 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
         ]);
         $result = $this->col->findOne(['bar' => ['$lt' => 1]], ['sort' => ['bar' => -1]]);
 
-        assertThat($result, isNull());
+        TestCase::assertThat($result, Assert::isNull());
     }
 
     public function testCollectionGetName()
     {
         $col = new MockCollection('foo');
-        assertThat($col->getCollectionName(), equalTo('foo'));
+        TestCase::assertThat($col->getCollectionName(), Assert::equalTo('foo'));
     }
 
     public function testCreateIndexRegistersIndex()
@@ -903,14 +911,14 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
 
         $indices = iterator_to_array($col->listIndexes());
 
-        assertThat(count($indices), equalTo(2));
+        TestCase::assertThat(count($indices), Assert::equalTo(2));
 
         $first = $indices[0];
         $second = $indices[1];
 
-        assertThat($first['unique'], isTrue());
-        assertThat($second['unique'], isFalse());
-        assertThat($first['key'], equalTo('foo'));
+        TestCase::assertThat($first['unique'], Assert::isTrue());
+        TestCase::assertThat($second['unique'], Assert::isFalse());
+        TestCase::assertThat($first['key'], Assert::equalTo('foo'));
     }
 
     public function testCreateIndexRegistersMultifieldIndex()
@@ -920,13 +928,13 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
 
         $indices = iterator_to_array($col->listIndexes());
 
-        assertThat(count($indices), equalTo(1));
+        TestCase::assertThat(count($indices), Assert::equalTo(1));
 
         $first = $indices[0];
 
-        assertThat($first['unique'], isTrue());
-        assertThat($first['key'], equalTo(['foo' => 1, 'bar' => -1]));
-        assertThat($first['name'], equalTo('foo_1_bar_1'));
+        TestCase::assertThat($first['unique'], Assert::isTrue());
+        TestCase::assertThat($first['key'], Assert::equalTo(['foo' => 1, 'bar' => -1]));
+        TestCase::assertThat($first['name'], Assert::equalTo('foo_1_bar_1'));
     }
 
 }

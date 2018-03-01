@@ -4,8 +4,10 @@ namespace Helmich\MongoMock\Assert;
 
 use Helmich\MongoMock\Log\Index;
 use Helmich\MongoMock\MockCollection;
+use PHPUnit\Framework\Assert;
+use PHPUnit\Framework\Constraint\Constraint;
 
-class IndexWasCreatedConstraint extends \PHPUnit_Framework_Constraint
+class IndexWasCreatedConstraint extends Constraint
 {
 
     /**
@@ -24,13 +26,13 @@ class IndexWasCreatedConstraint extends \PHPUnit_Framework_Constraint
         $this->options = $options;
     }
 
-    protected function matches($other)
+    protected function matches($other): bool
     {
         if (!$other instanceof MockCollection) {
             return false;
         }
 
-        $constraint = \PHPUnit_Framework_Assert::equalTo(new Index($this->key, $this->options));
+        $constraint = Assert::equalTo(new Index($this->key, $this->options));
 
         foreach ($other->indices as $index) {
             if ($constraint->evaluate($index, '', true)) {
@@ -46,7 +48,7 @@ class IndexWasCreatedConstraint extends \PHPUnit_Framework_Constraint
      *
      * @return string
      */
-    public function toString()
+    public function toString(): string
     {
         return 'has index of ' . json_encode($this->key);
     }
