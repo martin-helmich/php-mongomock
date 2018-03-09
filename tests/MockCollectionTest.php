@@ -13,8 +13,9 @@ use MongoDB\UpdateResult;
 use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
+use PHPUnit\Framework\TestCase;
 
-class MockCollectionTest extends \PHPUnit_Framework_TestCase
+class MockCollectionTest extends TestCase
 {
     /** @var Collection */
     private $col;
@@ -549,7 +550,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             }
         ]);
         $result = iterator_to_array($result);
-
+        
         assertThat(count($result), equalTo(1));
         assertThat($result[0]['foo'], equalTo('bar'));
     }
@@ -568,7 +569,7 @@ class MockCollectionTest extends \PHPUnit_Framework_TestCase
             'foo' => equalTo('bar')
         ]);
         $result = iterator_to_array($result);
-
+        
         assertThat(count($result), equalTo(1));
         assertThat($result[0]['foo'], equalTo('bar'));
     }
