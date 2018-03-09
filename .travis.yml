@@ -1,10 +1,20 @@
 language: php
 sudo: false
 php:
+  - 7.0
   - 7.1
+  - 7.2
+env:
+  - PHPUNIT=^6.0
+  - PHPUNIT=^7.0
+matrix:
+  exclude:
+    - php: 7.0
+      env: PHPUNIT=^7.0
 install:
   - pecl install mongodb
-  - composer install --prefer-dist
+  - composer require --no-update --no-interaction --no-ansi phpunit/phpunit $PHPUNIT
+  - composer install --no-interaction --no-ansi --prefer-dist
 script:
   - vendor/bin/phpunit --coverage-clover build/logs/clover.xml
 after_success:
