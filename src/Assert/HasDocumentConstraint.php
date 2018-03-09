@@ -3,6 +3,7 @@
 namespace Helmich\MongoMock\Assert;
 
 use Helmich\MongoMock\MockCollection;
+use PHPUnit\Framework\Constraint;
 
 class HasDocumentConstraint extends Constraint
 {

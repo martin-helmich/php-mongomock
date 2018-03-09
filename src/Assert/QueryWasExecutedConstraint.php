@@ -4,6 +4,7 @@ namespace Helmich\MongoMock\Assert;
 
 use Helmich\MongoMock\Log\Query;
 use Helmich\MongoMock\MockCollection;
+use PHPUnit\Framework\Constraint;
 
 class QueryWasExecutedConstraint extends Constraint
 {

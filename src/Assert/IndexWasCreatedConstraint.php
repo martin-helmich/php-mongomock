@@ -4,6 +4,7 @@ namespace Helmich\MongoMock\Assert;
 
 use Helmich\MongoMock\Log\Index;
 use Helmich\MongoMock\MockCollection;
+use PHPUnit\Framework\Constraint;
 
 class IndexWasCreatedConstraint extends Constraint
 {
