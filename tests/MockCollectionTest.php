@@ -14,7 +14,7 @@ use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 
-class MockCollectionTest extends \PHPUnit_Framework_TestCase
+class MockCollectionTest extends TestCase
 {
     /** @var Collection */
     private $col;
