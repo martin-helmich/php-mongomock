@@ -14,6 +14,7 @@ use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
 use MongoDB\Model\IndexInfoIteratorIterator;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
+use PHPUnit\Framework\Constraint\Constraint;
 
 /**
  * A mocked MongoDB collection
@@ -545,7 +546,7 @@ class MockCollection extends Collection
             return $constraint;
         }
 
-        if ($constraint instanceof \PHPUnit_Framework_Constraint) {
+        if ($constraint instanceof Constraint) {
             return function ($val) use ($constraint): bool {
                 return $constraint->evaluate($val, '', true);
             };
