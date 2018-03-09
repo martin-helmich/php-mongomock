@@ -5,7 +5,7 @@ namespace Helmich\MongoMock;
 use Helmich\MongoMock\Assert\HasDocumentConstraint;
 use Helmich\MongoMock\Assert\IndexWasCreatedConstraint;
 use Helmich\MongoMock\Assert\QueryWasExecutedConstraint;
-use PHPUnit_Framework_Constraint as Constraint;
+use PHPUnit\Framework\Constraint as Constraint;
 
 /**
  * Helper class containing static factory methods
