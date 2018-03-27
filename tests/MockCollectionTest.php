@@ -420,6 +420,20 @@ class MockCollectionTest extends TestCase
     /**
      * @depends testInsertManyInsertsDocuments
      */
+    public function testUpdatePush()
+    {
+         $this->col->insertOne(
+            ['foo' => 'foo', 'bar' => []]
+        );
+
+        $this->col->updateMany([], ['$push' => ['bar' => 'bar']]);
+        assertEquals($this->col->count(['bar' => ['$size' => 1]]), 1);
+    }
+
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
     public function testUpdateUpsertWithoutAtomicModifier()
     {
         try {
