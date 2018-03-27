@@ -381,7 +381,6 @@ class MockCollectionTest extends TestCase
         } else {
             assertThat($this->col->count(['bar' => 4]), equalTo(0));
         }
-
     }
 
 
@@ -396,6 +395,41 @@ class MockCollectionTest extends TestCase
             ['$set' => ['foo' => 'bar']]
         );
     }
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testUpdateIncrement()
+    {
+        $this->col->insertOne(
+            ['foo' => 'foo', 'bar' => 0]
+        );
+
+        $this->col->updateMany([], ['$inc' => ['bar' => 1]], ['upsert' => true]);
+        assertThat($this->col->count(['bar' => 1]), equalTo(1));
+
+        $this->col->insertOne(
+            ['foo' => 'foo', 'bar' => 1]
+        );
+
+        $this->col->updateMany([], ['$inc' => ['bar' => -1]], ['upsert' => true]);
+        assertThat($this->col->count(['bar' => 0]), equalTo(2));
+
+    }
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testUpdatePush()
+    {
+         $this->col->insertOne(
+            ['foo' => 'foo', 'bar' => []]
+        );
+
+        $this->col->updateMany([], ['$push' => ['bar' => 'bar']]);
+        assertEquals($this->col->count(['bar' => ['$size' => 1]]), 1);
+    }
+
 
     /**
      * @depends testInsertManyInsertsDocuments

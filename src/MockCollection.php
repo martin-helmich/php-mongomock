@@ -198,7 +198,7 @@ class MockCollection extends Collection
     {
         // The update operators are required, as exemplified here:
         // http://mongodb.github.io/mongo-php-library/tutorial/crud/
-        $supported = ['$set', '$unset'];
+        $supported = ['$set', '$unset', '$inc', '$push'];
         $unsupported = array_diff(array_keys($update), $supported);
         if (count($unsupported) > 0) {
             throw new Exception("Unsupported update operators found: " . implode(', ', $unsupported));
@@ -213,6 +213,22 @@ class MockCollection extends Collection
                 unset($doc[$k]);
             }
         }
+
+        foreach ($update['$inc'] ?? [] as $k => $v) {
+            if (array_key_exists($k, $doc) &&
+             is_integer($v) &&
+             is_integer($doc[$k])) {
+                $doc[$k] += $v;
+            }
+        }
+
+        foreach ($update['$push'] ?? [] as $k => $v) {
+            if (array_key_exists($k, $doc) &&
+             is_array($doc[$k])) {
+                $doc[$k][] = $v;
+            }
+        }
+
     }
 
     public function find($filter = [], array $options = []): MockCursor
@@ -608,6 +624,9 @@ class MockCollection extends Collection
                             break;
                         case '$exists':
                             $result = $result && $val !== null;
+                            break;
+                        case '$size':
+                            $result = $result && count($val) === $operand;
                             break;
                         case '$type':
                             $result = $result && $this->compareType($operand, $val);
