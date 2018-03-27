@@ -215,16 +215,13 @@ class MockCollection extends Collection
         }
 
         foreach ($update['$inc'] ?? [] as $k => $v) {
-            if (array_key_exists($k, $doc) &&
-             is_integer($v) &&
-             is_integer($doc[$k])) {
+            if (array_key_exists($k, $doc) && is_integer($v) && is_integer($doc[$k])) {
                 $doc[$k] += $v;
             }
         }
 
         foreach ($update['$push'] ?? [] as $k => $v) {
-            if (array_key_exists($k, $doc) &&
-             is_array($doc[$k])) {
+            if (array_key_exists($k, $doc) && is_array($doc[$k])) {
                 $doc[$k][] = $v;
             }
         }
