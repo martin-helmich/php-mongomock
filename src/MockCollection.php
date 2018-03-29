@@ -476,7 +476,7 @@ class MockCollection extends Collection
     {
         $matchers = [];
         foreach ($query as $field => $value) {
-            if ($field === '$and' || $field === '$or' || is_numeric($field)) {
+            if ($field === '$and' || $field === '$or' || $field === '$nor' || is_numeric($field)) {
                 $matchers[$field] = $this->buildRecursiveMatcherQuery($value);
             } else {
                 $matchers[$field] = $this->matcherFromConstraint($value);
@@ -521,14 +521,18 @@ class MockCollection extends Collection
                     }
 
                     return false;
-                } elseif ($field === '$not') {
-                    /*
-                     if (!is_array($matcher) || count($matcher) === 0) {
-                        throw new Exception('$or expression must be a nonempty array');
+                } elseif ($field === '$nor') {
+                    if (!is_array($matcher) || count($matcher) === 0) {
+                        throw new Exception('$nor expression must be a nonempty array');
                     }
-                    */
-                    return !$is_match($doc, $field);
 
+                    foreach ($matcher as $sub) {
+                        $matchers = $sub;
+                        if ($is_match($doc, $field)) {
+                            return false;
+                        }
+                    }
+                    return true;
                 }elseif ($field === '$isolated') {
                     return true;
                 } else {

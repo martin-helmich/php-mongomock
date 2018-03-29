@@ -829,6 +829,45 @@ class MockCollectionTest extends TestCase
     /**
      * @depends testInsertManyInsertsDocuments
      */
+    public function testManyByNorQuery()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 3],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+
+        $result = $this->col->count(['$nor' => [
+            'foo' => ['$eq' => 'foo'],
+            'foo' => ['$eq' => 'bar'],
+            'foo' => ['$eq' => 'baz']
+        ]]);
+        assertThat($result, equalTo(0));
+
+        /* Finding ['foo' => 'foo', 'bar' => 3] */
+        $result = $this->col->count(['$nor' => [
+            ['foo' => ['$eq' => 'bar']],
+            ['foo' => ['$eq' => 'baz']],
+            ['bar' => ['$lt' => 3]]
+        ]]);
+        assertThat($result, equalTo(1));
+
+        /* Finding ['foo' => 'bar', 'bar' => 1] */
+        $result = $this->col->count(['$nor' => [
+            ['foo' =>
+                ['$not' => ['$eq' => 'bar']]
+            ],
+            ['bar' =>
+                ['$not' => ['$eq' => 1]]
+            ]
+        ]]);
+        assertThat($result, equalTo(1));
+    }
+
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
     public function testOneSubFieldQuery()
     {
         $this->col->insertMany([
