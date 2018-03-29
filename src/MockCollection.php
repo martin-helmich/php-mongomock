@@ -473,7 +473,7 @@ class MockCollection extends Collection
     {
         $matchers = [];
         foreach ($query as $field => $value) {
-            if ($field === '$and' || $field === '$or' || is_numeric($field)) {
+            if ($field === '$and' || $field === '$or' || $field === '$nor' || is_numeric($field)) {
                 $matchers[$field] = $this->buildRecursiveMatcherQuery($value);
             } else {
                 $matchers[$field] = $this->matcherFromConstraint($value);
@@ -518,7 +518,19 @@ class MockCollection extends Collection
                     }
 
                     return false;
-                } elseif ($field === '$isolated') {
+                } elseif ($field === '$nor') {
+                    if (!is_array($matcher) || count($matcher) === 0) {
+                        throw new Exception('$nor expression must be a nonempty array');
+                    }
+
+                    foreach ($matcher as $sub) {
+                        $matchers = $sub;
+                        if ($is_match($doc, $field)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }elseif ($field === '$isolated') {
                     return true;
                 } else {
                     // needed for case of $exists query filter and field is inexistant
@@ -627,6 +639,14 @@ class MockCollection extends Collection
                             break;
                         case '$type':
                             $result = $result && $this->compareType($operand, $val);
+                            break;
+                        case '$not':
+                            if (is_array($operand)) {
+                                $matcher = $this->matcherFromConstraint($operand);
+                                $result = $result && !$matcher($val);
+                            } else {
+                                $result = $result && !$operand;
+                            }
                             break;
                         // Custom operators
                         case '$instanceOf':

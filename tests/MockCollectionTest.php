@@ -156,6 +156,34 @@ class MockCollectionTest extends TestCase
     /**
      * @depends testInsertOneInsertsDocument
      */
+    public function testFindWithInvertedFilter()
+    {
+        $this->col->insertMany([
+            ['foo' => 'bar'],
+            ['foo' => 'baz']
+        ]); 
+        
+        $result = $this->col->count(['foo' => ['$not' => ['$in' => ['bar', 'baz']]]]);
+        assertThat($result, equalTo(0));
+
+        $find = $this->col->find(['foo' => ['$not' => ['$eq' => 'baz']]]);
+        $result = $find->toArray();
+        assertThat(count($result), equalTo(1));
+        assertThat($result[0]['foo'], equalTo('bar'));
+
+        $find = $this->col->find(['foo' => ['$not' => 
+            ['$not' => 
+                ['$eq' => 'bar']
+            ]
+        ]]);
+        $result = $find->toArray();
+        assertThat(count($result), equalTo(1));
+        assertThat($result[0]['foo'], equalTo('bar'));
+    }
+
+    /**
+     * @depends testInsertOneInsertsDocument
+     */
     public function testInsertOneKeepsBSONObjects()
     {
         $result = $this->col->insertOne(new BSONDocument(['foo' => 'bar']));
@@ -797,6 +825,45 @@ class MockCollectionTest extends TestCase
         assertThat(count($result), equalTo(1));
         assertThat($result[0]['foo'], equalTo('foo'));
     }
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testManyByNorQuery()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 3],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+
+        $result = $this->col->count(['$nor' => [
+            'foo' => ['$eq' => 'foo'],
+            'foo' => ['$eq' => 'bar'],
+            'foo' => ['$eq' => 'baz']
+        ]]);
+        assertThat($result, equalTo(0));
+
+        /* Finding ['foo' => 'foo', 'bar' => 3] */
+        $result = $this->col->count(['$nor' => [
+            ['foo' => ['$eq' => 'bar']],
+            ['foo' => ['$eq' => 'baz']],
+            ['bar' => ['$lt' => 3]]
+        ]]);
+        assertThat($result, equalTo(1));
+
+        /* Finding ['foo' => 'bar', 'bar' => 1] */
+        $result = $this->col->count(['$nor' => [
+            ['foo' =>
+                ['$not' => ['$eq' => 'bar']]
+            ],
+            ['bar' =>
+                ['$not' => ['$eq' => 1]]
+            ]
+        ]]);
+        assertThat($result, equalTo(1));
+    }
+
 
     /**
      * @depends testInsertManyInsertsDocuments
