@@ -156,6 +156,34 @@ class MockCollectionTest extends TestCase
     /**
      * @depends testInsertOneInsertsDocument
      */
+    public function testFindWithInvertedFilter()
+    {
+        $this->col->insertMany([
+            ['foo' => 'bar'],
+            ['foo' => 'baz']
+        ]); 
+        
+        $result = $this->col->count(['foo' => ['$not' => ['$in' => ['bar', 'baz']]]]);
+        assertThat($result, equalTo(0));
+
+        $find = $this->col->find(['foo' => ['$not' => ['$eq' => 'baz']]]);
+        $result = $find->toArray();
+        assertThat(count($result), equalTo(1));
+        assertThat($result[0]['foo'], equalTo('bar'));
+
+        $find = $this->col->find(['foo' => ['$not' => 
+            ['$not' => 
+                ['$eq' => 'bar']
+            ]
+        ]]);
+        $result = $find->toArray();
+        assertThat(count($result), equalTo(1));
+        assertThat($result[0]['foo'], equalTo('bar'));
+    }
+
+    /**
+     * @depends testInsertOneInsertsDocument
+     */
     public function testInsertOneKeepsBSONObjects()
     {
         $result = $this->col->insertOne(new BSONDocument(['foo' => 'bar']));

@@ -521,7 +521,15 @@ class MockCollection extends Collection
                     }
 
                     return false;
-                } elseif ($field === '$isolated') {
+                } elseif ($field === '$not') {
+                    /*
+                     if (!is_array($matcher) || count($matcher) === 0) {
+                        throw new Exception('$or expression must be a nonempty array');
+                    }
+                    */
+                    return !$is_match($doc, $field);
+
+                }elseif ($field === '$isolated') {
                     return true;
                 } else {
                     // needed for case of $exists query filter and field is inexistant
@@ -630,6 +638,14 @@ class MockCollection extends Collection
                             break;
                         case '$type':
                             $result = $result && $this->compareType($operand, $val);
+                            break;
+                        case '$not':
+                            if (is_array($operand)) {
+                                $matcher = $this->matcherFromConstraint($operand);
+                                $result = $result && !$matcher($val);
+                            } else {
+                                $result = $result && !$operand;
+                            }
                             break;
                         // Custom operators
                         case '$instanceOf':
