@@ -618,7 +618,18 @@ class MockCollection extends Collection
                             $result = $result && ($val != $operand);
                             break;
                         case '$in':
-                            $result = $result && in_array($val, $operand);
+                            if (is_array($val)) {
+                                $result = array_reduce(
+                                    $operand,
+                                    function ($acc, $op) use ($val) {
+                                        return ($acc || in_array($op, $val));
+                                    },
+                                    false
+                                );
+                            }
+                            else {
+                                $result = $result && in_array($val, $operand);
+                            }
                             break;
                         case '$elemMatch':
                             if (is_array($val)) {
