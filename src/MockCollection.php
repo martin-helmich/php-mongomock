@@ -337,6 +337,11 @@ class MockCollection extends Collection
         return $count;
     }
 
+    public function countDocuments($filter = [], array $options = [])
+    {
+        return $this->count($filter, $options);
+    }
+
     public function createIndex($key, array $options = [])
     {
         $name = '';
