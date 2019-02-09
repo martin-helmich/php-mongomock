@@ -1,16 +1,17 @@
 language: php
 sudo: false
 php:
-  - 7.0
   - 7.1
   - 7.2
+  - 7.3
 env:
   - PHPUNIT=^6.0
   - PHPUNIT=^7.0
+  - PHPUNIT=^8.0
 matrix:
   exclude:
-    - php: 7.0
-      env: PHPUNIT=^7.0
+    - php: 7.1
+      env: PHPUNIT=^8.0
 install:
   - pecl install --force mongodb
   - composer require --no-update --no-interaction --no-ansi phpunit/phpunit $PHPUNIT
