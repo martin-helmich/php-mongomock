@@ -20,7 +20,7 @@ class MockCollectionTest extends TestCase
     /** @var Collection */
     private $col;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->col = new MockCollection();
     }
