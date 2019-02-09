@@ -602,64 +602,76 @@ class MockCollection extends Collection
                     switch ($type) {
                         // Mongo operators (subset)
                         case '$gt':
-                            $result = $result && ($val > $operand);
+                            $result = ($val > $operand);
                             break;
                         case '$gte':
-                            $result = $result && ($val >= $operand);
+                            $result = ($val >= $operand);
                             break;
                         case '$lt':
-                            $result = $result && ($val < $operand);
+                            $result = ($val < $operand);
                             break;
                         case '$lte':
-                            $result = $result && ($val <= $operand);
+                            $result = ($val <= $operand);
                             break;
                         case '$eq':
-                            $result = $result && ($val === $operand);
+                            $result = ($val === $operand);
                             break;
                         case '$ne':
-                            $result = $result && ($val != $operand);
+                            $result = ($val != $operand);
                             break;
                         case '$in':
-                            $result = $result && in_array($val, $operand);
+                            $result = (!is_array($val))
+                                ? in_array($val, $operand)
+                                : array_reduce(
+                                    $operand,
+                                    function ($acc, $op) use ($val) {
+                                        return ($acc || in_array($op, $val));
+                                    },
+                                    false
+                                );
                             break;
                         case '$elemMatch':
                             if (is_array($val)) {
                                 $matcher = $this->matcherFromQuery($operand);
                                 foreach ($val as $v) {
-                                    $result = $result && $matcher($v);
+                                    $result = $matcher($v);
                                     if ($result === true) {
                                         break;
                                     }
                                 }
                             } else {
                                 $constraint = $operand;
-                                $result = $result && $match($val);
+                                $result = $match($val);
                             }
                             break;
                         case '$exists':
-                            $result = $result && $val !== null;
+                            $result = $val !== null;
                             break;
                         case '$size':
-                            $result = $result && count($val) === $operand;
+                            $result = count($val) === $operand;
                             break;
                         case '$type':
-                            $result = $result && $this->compareType($operand, $val);
+                            $result = $this->compareType($operand, $val);
                             break;
                         case '$not':
                             if (is_array($operand)) {
                                 $matcher = $this->matcherFromConstraint($operand);
-                                $result = $result && !$matcher($val);
+                                $result = !$matcher($val);
                             } else {
-                                $result = $result && !$operand;
+                                $result = !$operand;
                             }
                             break;
                         // Custom operators
                         case '$instanceOf':
-                            $result = $result && is_a($val, $operand);
+                            $result = is_a($val, $operand);
                             break;
 
                         default:
                             throw new Exception("Constraint operator '" . $type . "' not yet implemented in MockCollection");
+                    }
+
+                    if (!$result) {
+                        break;
                     }
                 }
                 return $result;

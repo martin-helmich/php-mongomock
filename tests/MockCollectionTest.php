@@ -184,6 +184,30 @@ class MockCollectionTest extends TestCase
     /**
      * @depends testInsertOneInsertsDocument
      */
+    public function testFindWithInFilter()
+    {
+        $this->col->insertMany([
+            ['foo' => ['bar', 'baz', 'bad']],
+            ['foo' => ['baz', 'bad']],
+            ['foo' => ['foobar', 'baroof']]
+        ]); 
+
+        $result = $this->col->count(['foo' => ['$in' => ['barbar']]]);
+        assertThat($result, equalTo(0));
+
+        $result = $this->col->count(['foo' => ['$in' => ['bar']]]);
+        assertThat($result, equalTo(1));
+
+        $result = $this->col->count(['foo' => ['$in' => ['bar', 'baz']]]);
+        assertThat($result, equalTo(2));
+
+        $result = $this->col->count(['foo' => ['$in' => ['foobar', 'bad']]]);
+        assertThat($result, equalTo(3));
+    }
+
+    /**
+     * @depends testInsertOneInsertsDocument
+     */
     public function testInsertOneKeepsBSONObjects()
     {
         $result = $this->col->insertOne(new BSONDocument(['foo' => 'bar']));
