@@ -12,8 +12,7 @@ matrix:
     - php: 7.0
       env: PHPUNIT=^7.0
 install:
-  - pecl list
-  - pecl list | grep -q mongodb || pecl install mongodb
+  - pecl install mongodb || true
   - composer require --no-update --no-interaction --no-ansi phpunit/phpunit $PHPUNIT
   - composer install --no-interaction --no-ansi --prefer-dist
 script:
