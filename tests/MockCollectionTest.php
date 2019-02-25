@@ -1058,15 +1058,23 @@ class MockCollectionTest extends TestCase
     public function testFindReturnsClonesNotReferences ()
     {
         $collection = new MockCollection('anyCollection');
-        $documentId = $collection->insertOne(['foo' => 'bar'])->getInsertedId();
+        $documentId = $collection->insertOne(['foo' => 'bar', 'bax' => ['hello' => 'world']])->getInsertedId();
 
         $documentBeforeUpdate = $collection->findOne(['_id' => $documentId]);
-        $collection->updateOne(['_id' => $documentId], ['$set' => ['foo' => 'baz']]);
+        $collection->updateOne(['_id' => $documentId], ['$set' => ['foo' => 'baz', 'bax' => ['hello' => 'planet']]]);
         $documentAfterUpdate = $collection->findOne(['_id' => $documentId]);
 
+        // Test shallow object
         assertNotSame($documentBeforeUpdate, $documentAfterUpdate);
         assertThat($documentBeforeUpdate['foo'], equalTo('bar'));
         assertThat($documentAfterUpdate['foo'], equalTo('baz'));
+
+        // Test sub-documents
+        $subDocumentBeforeUpdate = $documentBeforeUpdate['bax'];
+        $subDocumentAfterUpdate = $documentAfterUpdate['bax'];
+        assertNotSame($subDocumentBeforeUpdate, $subDocumentAfterUpdate);
+        assertThat($subDocumentBeforeUpdate['hello'], equalTo('world'));
+        assertThat($subDocumentAfterUpdate['hello'], equalTo('planet'));
     }
 
 }
