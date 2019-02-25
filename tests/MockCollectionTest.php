@@ -9,6 +9,7 @@ use MongoDB\BSON\Regex;
 use MongoDB\Collection;
 use MongoDB\InsertManyResult;
 use MongoDB\InsertOneResult;
+use MongoDB\Operation\FindOneAndUpdate;
 use MongoDB\UpdateResult;
 use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
@@ -1053,6 +1054,46 @@ class MockCollectionTest extends TestCase
         assertThat($first['unique'], isTrue());
         assertThat($first['key'], equalTo(['foo' => 1, 'bar' => -1]));
         assertThat($first['name'], equalTo('foo_1_bar_1'));
+    }
+
+    public function testFindOneAndUpdateWithReturnDocumentBefore()
+    {
+        $col = new MockCollection('foo');
+        $insertOneResult = $col->insertOne(['foo' => true, 'bar' => 42]);
+
+        $documentBeforeUpdate = $col->findOneAndUpdate(['_id' => $insertOneResult->getInsertedId()], [
+            '$set' => [
+                'foo' => false,
+                'bar' => 23
+            ]
+        ], ['returnDocument' => FindOneAndUpdate::RETURN_DOCUMENT_BEFORE]);
+
+        $documentAfterUpdate = $col->findOne(['_id' => $insertOneResult->getInsertedId()]);
+
+        // Assert that the update worked
+        assertThat($documentAfterUpdate['foo'], isFalse());
+        assertThat($documentAfterUpdate['bar'], equalTo(23));
+
+        // Assert that the document has been returned _before_ updating
+        assertThat($documentBeforeUpdate['foo'], isTrue());
+        assertThat($documentBeforeUpdate['bar'], equalTo(42));
+    }
+
+    public function testFindOneAndUpdateWithReturnDocumentAfter()
+    {
+        $col = new MockCollection('foo');
+        $insertOneResult = $col->insertOne(['foo' => true, 'bar' => 42]);
+
+        $documentAfterUpdate = $col->findOneAndUpdate(['_id' => $insertOneResult->getInsertedId()], [
+            '$set' => [
+                'foo' => false,
+                'bar' => 23
+            ]
+        ], ['returnDocument' => FindOneAndUpdate::RETURN_DOCUMENT_AFTER]);
+
+        // Assert that the update worked
+        assertThat($documentAfterUpdate['foo'], isFalse());
+        assertThat($documentAfterUpdate['bar'], equalTo(23));
     }
 
 }
