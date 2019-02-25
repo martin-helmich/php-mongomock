@@ -1055,4 +1055,18 @@ class MockCollectionTest extends TestCase
         assertThat($first['name'], equalTo('foo_1_bar_1'));
     }
 
+    public function testFindReturnsClonesNotReferences ()
+    {
+        $collection = new MockCollection('anyCollection');
+        $documentId = $collection->insertOne(['foo' => 'bar'])->getInsertedId();
+
+        $documentBeforeUpdate = $collection->findOne(['_id' => $documentId]);
+        $collection->updateOne(['_id' => $documentId], ['$set' => ['foo' => 'baz']]);
+        $documentAfterUpdate = $collection->findOne(['_id' => $documentId]);
+
+        assertNotSame($documentBeforeUpdate, $documentAfterUpdate);
+        assertThat($documentBeforeUpdate['foo'], equalTo('bar'));
+        assertThat($documentAfterUpdate['foo'], equalTo('baz'));
+    }
+
 }
