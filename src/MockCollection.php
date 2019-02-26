@@ -14,6 +14,7 @@ use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
 use MongoDB\Model\IndexInfoIteratorIterator;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
+use MongoDB\Operation\FindOneAndUpdate;
 use PHPUnit\Framework\Constraint\Constraint;
 
 /**
@@ -424,7 +425,26 @@ class MockCollection extends Collection
 
     public function findOneAndUpdate($filter, $update, array $options = [])
     {
-        // TODO: Implement this function
+        if (!isset($options['returnDocument'])) {
+            // Standard behaviour according to https://docs.mongodb.com/php-library/v1.2/reference/method/MongoDBCollection-findOneAndUpdate/#definition
+            $options['returnDocument'] = FindOneAndUpdate::RETURN_DOCUMENT_BEFORE;
+        }
+
+        $returnDocument = null;
+        if ($options['returnDocument'] === FindOneAndUpdate::RETURN_DOCUMENT_BEFORE) {
+            // TODO: Remove `clone` once https://github.com/martin-helmich/php-mongomock/pull/27 is merged
+            $returnDocument = clone $this->findOne($filter, $options);
+        }
+
+        $this->updateOne($filter, $update, $options);
+
+        if ($options['returnDocument'] === FindOneAndUpdate::RETURN_DOCUMENT_AFTER) {
+            return $this->findOne($filter, $options);
+        } elseif ($returnDocument !== null) {
+            return $returnDocument;
+        }
+
+        throw new Exception('Given option value "' . $options['returnDocument'] . '" for findOneAndUpdate() "returnDocument" option is invalid');
     }
 
     public function getCollectionName()
