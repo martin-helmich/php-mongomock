@@ -432,8 +432,7 @@ class MockCollection extends Collection
 
         $returnDocument = null;
         if ($options['returnDocument'] === FindOneAndUpdate::RETURN_DOCUMENT_BEFORE) {
-            // TODO: Remove `clone` once https://github.com/martin-helmich/php-mongomock/pull/27 is merged
-            $returnDocument = clone $this->findOne($filter, $options);
+            $returnDocument = $this->findOne($filter, $options);
         }
 
         $this->updateOne($filter, $update, $options);
