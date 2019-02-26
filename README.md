@@ -4,7 +4,7 @@
 
 ## Author and license
 
-Martin Helmich
+Martin Helmich  
 This library is [MIT-licenced](LICENSE.txt).
 
 ## Synopsis and motivation
