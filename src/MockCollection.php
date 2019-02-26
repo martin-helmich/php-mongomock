@@ -284,7 +284,7 @@ class MockCollection extends Collection
                     $limit--;
                 }
 
-                $cursor[] = $this->typeMap($doc, $typeMap);
+                $cursor[] = $this->typeMap(clone $doc, $typeMap);
             }
         }
 
