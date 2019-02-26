@@ -81,14 +81,11 @@ testability:
     ```
 
 ## Testing
-To run the tests on Ubuntu
-```bash
-[sudo] apt-get install libpcre3-dev php-curl composer php-pear php-dev libcurl4-openssl-dev pkg-config php-curl
-[sudo] pecl install mongodb zip
-echo "extension=mongodb.so" | [sudo] tee -a /etc/php/7.0/cli/conf.d/mongodb.ini
-echo "extension=zip.so" | [sudo] tee -a /etc/php/7.0/cli/conf.d/zip.ini
-composer install
-composer run-script test
+
+To run the tests (anywhere with a running Docker installation):
+
+```
+$ docker-compose run phpunit
 ```
 
 [mongo-collection]: http://php.net/manual/en/class.mongocollection.php

@@ -1,0 +1,15 @@
+version: "3"
+services:
+  phpunit:
+    build:
+      context: .
+      dockerfile: phpunit.DOCKERFILE
+    command: 
+      - bash
+      - -c
+      - |
+        composer install
+        vendor/bin/phpunit
+    working_dir: /work
+    volumes:
+      - .:/work
