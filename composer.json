@@ -29,7 +29,7 @@
     }
   },
   "require-dev": {
-    "codeclimate/php-test-reporter": "^0.3.0"
+    "codeclimate/php-test-reporter": "^0.3.0 || ^0.4.0"
   },
   "scripts": {
     "test": [
