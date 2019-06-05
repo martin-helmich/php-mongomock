@@ -77,7 +77,7 @@ class MockCollection extends Collection
     ];
 
     /**
-     * @param string       $name
+     * @param string $name
      * @param MockDatabase $db
      */
     public function __construct(string $name = 'collection', MockDatabase $db = null, array $options = [])
@@ -206,7 +206,19 @@ class MockCollection extends Collection
         }
 
         foreach ($update['$set'] ?? [] as $k => $v) {
-            $doc[$k] = $v;
+            $dot = strpos($k, ".");
+            if ($dot !== false) {
+                $tmp = &$doc;
+                $keys = explode(".", $k);
+                if ($keys !== null) {
+                    foreach ($keys as $key) {
+                        $tmp = &$tmp[$key];
+                    }
+                    $tmp = $v;
+                }
+            } else {
+                $doc[$k] = $v;
+            }
         }
 
         foreach ($update['$unset'] ?? [] as $k => $v) {
@@ -260,8 +272,10 @@ class MockCollection extends Collection
 
                     if ($av > $bv) {
                         return $dir;
-                    } else if ($av < $bv) {
-                        return -$dir;
+                    } else {
+                        if ($av < $bv) {
+                            return -$dir;
+                        }
                     }
                 }
                 return 0;
@@ -472,11 +486,11 @@ class MockCollection extends Collection
 
         foreach ($this->indices as $name => $index) {
             $indices[] = [
-                'v'      => 1,
+                'v' => 1,
                 'unique' => isset($index->getOptions()['unique']) ? $index->getOptions()['unique'] : false,
-                'key'    => $index->getKey(),
-                'name'   => $name,
-                'ns'     => $dbName . '.' . $this->name,
+                'key' => $index->getKey(),
+                'name' => $name,
+                'ns' => $dbName . '.' . $this->name,
             ];
         }
 
@@ -554,7 +568,7 @@ class MockCollection extends Collection
                         }
                     }
                     return true;
-                }elseif ($field === '$isolated') {
+                } elseif ($field === '$isolated') {
                     return true;
                 } else {
                     // needed for case of $exists query filter and field is inexistant
