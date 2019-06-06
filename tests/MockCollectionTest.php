@@ -49,12 +49,12 @@ class MockCollectionTest extends TestCase
         ]);
 
         $this->expectException(DriverRuntimeException::class);
-        
+
         // inserting a document with the same _id (baz)
         $result = $this->col->insertOne([
             '_id' => 'baz',
             'bat' => 'dog'
-        ]);        
+        ]);
     }
 
     /**
@@ -162,8 +162,8 @@ class MockCollectionTest extends TestCase
         $this->col->insertMany([
             ['foo' => 'bar'],
             ['foo' => 'baz']
-        ]); 
-        
+        ]);
+
         $result = $this->col->count(['foo' => ['$not' => ['$in' => ['bar', 'baz']]]]);
         assertThat($result, equalTo(0));
 
@@ -172,11 +172,15 @@ class MockCollectionTest extends TestCase
         assertThat(count($result), equalTo(1));
         assertThat($result[0]['foo'], equalTo('bar'));
 
-        $find = $this->col->find(['foo' => ['$not' => 
-            ['$not' => 
-                ['$eq' => 'bar']
+        $find = $this->col->find([
+            'foo' => [
+                '$not' =>
+                    [
+                        '$not' =>
+                            ['$eq' => 'bar']
+                    ]
             ]
-        ]]);
+        ]);
         $result = $find->toArray();
         assertThat(count($result), equalTo(1));
         assertThat($result[0]['foo'], equalTo('bar'));
@@ -191,7 +195,7 @@ class MockCollectionTest extends TestCase
             ['foo' => ['bar', 'baz', 'bad']],
             ['foo' => ['baz', 'bad']],
             ['foo' => ['foobar', 'baroof']]
-        ]); 
+        ]);
 
         $result = $this->col->count(['foo' => ['$in' => ['barbar']]]);
         assertThat($result, equalTo(0));
@@ -475,7 +479,7 @@ class MockCollectionTest extends TestCase
      */
     public function testUpdatePush()
     {
-         $this->col->insertOne(
+        $this->col->insertOne(
             ['foo' => 'foo', 'bar' => []]
         );
 
@@ -637,7 +641,7 @@ class MockCollectionTest extends TestCase
             }
         ]);
         $result = iterator_to_array($result);
-        
+
         assertThat(count($result), equalTo(1));
         assertThat($result[0]['foo'], equalTo('bar'));
     }
@@ -656,7 +660,7 @@ class MockCollectionTest extends TestCase
             'foo' => equalTo('bar')
         ]);
         $result = iterator_to_array($result);
-        
+
         assertThat(count($result), equalTo(1));
         assertThat($result[0]['foo'], equalTo('bar'));
     }
@@ -817,10 +821,12 @@ class MockCollectionTest extends TestCase
             ['foo' => 'baz', 'bar' => 2],
         ]);
 
-        $result = $this->col->find(['$or' => [
-            ['$and' => [['foo' => 'foo'], ['bar' => '3']]],
-            ['$and' => [['foo' => 'baz'], ['bar' => '2']]],
-        ]]);
+        $result = $this->col->find([
+            '$or' => [
+                ['$and' => [['foo' => 'foo'], ['bar' => '3']]],
+                ['$and' => [['foo' => 'baz'], ['bar' => '2']]],
+            ]
+        ]);
 
         assertThat($result, isInstanceOf(MockCursor::class));
         $result = $result->toArray();
@@ -840,10 +846,12 @@ class MockCollectionTest extends TestCase
             ['foo' => 'baz', 'bar' => 2],
         ]);
 
-        $result = $this->col->find(['$and' => [
-            ['$or' => [['foo' => 1], ['foo' => 'foo']]],
-            ['$or' => [['bar' => 'foo'], ['bar' => 3]]],
-        ]]);
+        $result = $this->col->find([
+            '$and' => [
+                ['$or' => [['foo' => 1], ['foo' => 'foo']]],
+                ['$or' => [['bar' => 'foo'], ['bar' => 3]]],
+            ]
+        ]);
 
         assertThat($result, isInstanceOf(MockCursor::class));
         $result = $result->toArray();
@@ -862,30 +870,38 @@ class MockCollectionTest extends TestCase
             ['foo' => 'baz', 'bar' => 2],
         ]);
 
-        $result = $this->col->count(['$nor' => [
-            'foo' => ['$eq' => 'foo'],
-            'foo' => ['$eq' => 'bar'],
-            'foo' => ['$eq' => 'baz']
-        ]]);
+        $result = $this->col->count([
+            '$nor' => [
+                'foo' => ['$eq' => 'foo'],
+                'foo' => ['$eq' => 'bar'],
+                'foo' => ['$eq' => 'baz']
+            ]
+        ]);
         assertThat($result, equalTo(0));
 
         /* Finding ['foo' => 'foo', 'bar' => 3] */
-        $result = $this->col->count(['$nor' => [
-            ['foo' => ['$eq' => 'bar']],
-            ['foo' => ['$eq' => 'baz']],
-            ['bar' => ['$lt' => 3]]
-        ]]);
+        $result = $this->col->count([
+            '$nor' => [
+                ['foo' => ['$eq' => 'bar']],
+                ['foo' => ['$eq' => 'baz']],
+                ['bar' => ['$lt' => 3]]
+            ]
+        ]);
         assertThat($result, equalTo(1));
 
         /* Finding ['foo' => 'bar', 'bar' => 1] */
-        $result = $this->col->count(['$nor' => [
-            ['foo' =>
-                ['$not' => ['$eq' => 'bar']]
-            ],
-            ['bar' =>
-                ['$not' => ['$eq' => 1]]
+        $result = $this->col->count([
+            '$nor' => [
+                [
+                    'foo' =>
+                        ['$not' => ['$eq' => 'bar']]
+                ],
+                [
+                    'bar' =>
+                        ['$not' => ['$eq' => 1]]
+                ]
             ]
-        ]]);
+        ]);
         assertThat($result, equalTo(1));
     }
 
@@ -943,10 +959,12 @@ class MockCollectionTest extends TestCase
             ['foo' => 'baz', 'bar' => 2],
         ]);
 
-        $result = $this->col->find(['$or' => [
-            ['bar' => ['$lte' => 1]],
-            ['bar' => ['$gte' => 3]]
-        ]]);
+        $result = $this->col->find([
+            '$or' => [
+                ['bar' => ['$lte' => 1]],
+                ['bar' => ['$gte' => 3]]
+            ]
+        ]);
 
         assertThat($result, isInstanceOf(MockCursor::class));
         $result = $result->toArray();
@@ -1118,4 +1136,19 @@ class MockCollectionTest extends TestCase
         assertThat($documentAfterUpdate['bar'], equalTo(23));
     }
 
+    public function testSetMultiDimensionalArray()
+    {
+        $col = new MockCollection('foo');
+        $insertOneResult = $col->insertOne(['foo' => ['foo' => ['bar' => "test"]], 'bar' => 42]);
+
+        $col->updateOne(
+            ['_id' => $insertOneResult->getInsertedId()],
+            [
+                '$set' => ["foo.foo.bar" => "azerty"]
+            ]
+        );
+
+        $documentAfterUpdate = $col->findOne(['_id' => $insertOneResult->getInsertedId()]);
+        assertThat($documentAfterUpdate['foo']['foo']['bar'], equalTo("azerty"), $documentAfterUpdate['foo']['foo']['bar']);
+    }
 }
