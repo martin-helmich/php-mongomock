@@ -721,6 +721,10 @@ class MockCollection extends Collection
                 return $val->getData() == $constraint;
             }
 
+            if (is_array($val) && is_scalar($constraint)) {
+                return in_array($constraint, $val, true);
+            }
+
             return $val == $constraint;
         };
     }
