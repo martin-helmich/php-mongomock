@@ -21,7 +21,18 @@ class TypeMapperTest extends TestCase
         $this->assertCount(3, $mapped['list']);
     }
 
-    function testMapWithDocumentAsArrayOption () {
+    function testMapWithDocumentAndArraysAsArrayOption () {
+        $typeMapper = TypeMapper::createWithDefault(['document' => 'array', 'array' => 'array']);
+        $mapped = $typeMapper->map(new BSONDocument(['foo' => 'bar', 'list' => [1, 2, 3]]));
+
+        $this->assertIsArray($mapped);
+        $this->assertArrayHasKey('foo', $mapped);
+        $this->assertSame('bar', $mapped['foo']);
+        $this->assertIsArray($mapped['list']);
+        $this->assertCount(3, $mapped['list']);
+    }
+
+    function testMapWithDocumentAsCustomTypeOption () {
         $typeMapper = TypeMapper::createWithDefault(['document' => BSONArray::class]);
         $mapped = $typeMapper->map(new BSONDocument(['foo' => 'bar', 'list' => [1, 2, 3]]));
 
