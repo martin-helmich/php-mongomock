@@ -35,6 +35,20 @@ class TypeMapper {
     }
 
     /**
+     * Merges a TypeMap with another TypeMap and returns a new mapper instance
+     *
+     * @param TypeMapper $typeMapper
+     * @return TypeMapper
+     */
+    function mergeWith(TypeMapper $typeMapper) : TypeMapper
+    {
+        $instance = clone $this;
+        $instance->typeMap = array_merge($instance->typeMap, $typeMapper->typeMap);
+
+        return $instance;
+    }
+
+    /**
      * @param BSONDocument $document
      * @return BSONDocument|array
      */
@@ -62,20 +76,6 @@ class TypeMapper {
         }
 
         return $document;
-    }
-
-    /**
-     * Merges a TypeMap with another TypeMap and returns a new mapper instance
-     *
-     * @param TypeMapper $typeMapper
-     * @return TypeMapper
-     */
-    function mergeWith(TypeMapper $typeMapper) : TypeMapper
-    {
-        $instance = clone $this;
-        $instance->typeMap = array_merge($instance->typeMap, $typeMapper->typeMap);
-
-        return $instance;
     }
 
 }
