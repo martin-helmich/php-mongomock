@@ -57,25 +57,58 @@ class TypeMapper {
         /** @var BSONDocument $document */
         $document = $this->typeMapRecursively($document);
 
-        if ($this->typeMap['document'] === 'array') {
-            $document = $document->getArrayCopy();
-        } elseif ($this->typeMap['document'] !== BSONDocument::class) {
-            $document = new $this->typeMap['document']($document->getArrayCopy());
+        return $this->typeMapDocument($document);
+    }
+
+    /**
+     * @param mixed $document
+     * @return mixed
+     */
+    private function typeMapRecursively ($document)
+    {
+        foreach ($document as $key => &$value) {
+            if (is_array($value)) {
+                $value = $this->typeMapArray($value);
+            }
         }
 
         return $document;
     }
 
-    private function typeMapRecursively ($document)
+    /**
+     * @param array $value
+     * @return array|object
+     */
+    private function typeMapArray (array $value)
     {
-        foreach ($document as $key => &$value) {
-            if (is_array($value) && $this->typeMap['array'] !== 'array') {
-                $value = $this->typeMapRecursively($value);
-                $value = new $this->typeMap['array']($value);
-            }
+        // If the list is not indexed numerically, it is an associative array
+        // Treat associative arrays as documents
+        if (array_keys($value) !== range(0, count($value) - 1)) {
+            return $this->typeMapDocument($this->typeMapRecursively($value));
         }
 
-        return $document;
+        if ($this->typeMap['array'] === 'array') {
+            return $value;
+        }
+
+        return new $this->typeMap['array']($this->typeMapRecursively($value));
+    }
+
+    /**
+     * @param BSONDocument|array|object $document
+     * @return array|object
+     */
+    private function typeMapDocument($document)
+    {
+        if ($document instanceof BSONDocument) {
+            $document = $document->getArrayCopy();
+        }
+
+        if ($this->typeMap['document'] === 'array') {
+            return $document;
+        }
+
+        return new $this->typeMap['document']($document);
     }
 
 }
