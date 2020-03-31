@@ -292,7 +292,7 @@ class MockCollection extends Collection
                     $limit--;
                 }
 
-                $cursor[] = $typeMapper->map(clone $doc);
+                $cursor[] = $typeMapper->map($doc);
             }
         }
 
