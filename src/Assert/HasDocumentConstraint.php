@@ -15,7 +15,6 @@ class HasDocumentConstraint extends Constraint
 
     public function __construct($filter)
     {
-        parent::__construct();
         $this->filter = $filter;
     }
 
