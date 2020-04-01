@@ -1151,4 +1151,15 @@ class MockCollectionTest extends TestCase
         $documentAfterUpdate = $col->findOne(['_id' => $insertOneResult->getInsertedId()]);
         assertThat($documentAfterUpdate['foo']['foo']['bar'], equalTo("azerty"), $documentAfterUpdate['foo']['foo']['bar']);
     }
+
+    public function testFindScalarValueInArray()
+    {
+        $col = new MockCollection('foo');
+        $col->insertOne(['foo' => ['bar', 'baz']]);
+
+        $document = $col->findOne(['foo' => 'bar']);
+
+        assertInstanceOf(BSONDocument::class, $document);
+        assertArrayHasKey('foo', $document);
+    }
 }
