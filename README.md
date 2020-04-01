@@ -1,6 +1,6 @@
 # MongoDB mock classes
 
-[![Build Status](https://travis-ci.org/martin-helmich/php-mongomock.svg?branch=master)](http://travis-ci.org/martin-helmich/php-mongomock)
+![Unit tests](https://github.com/martin-helmich/php-mongomock/workflows/Unit%20tests/badge.svg)
 
 ## Author and license
 
