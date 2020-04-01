@@ -4,6 +4,7 @@ namespace Helmich\MongoMock\Assert;
 
 use Helmich\MongoMock\Log\Query;
 use Helmich\MongoMock\MockCollection;
+use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\Constraint\Constraint;
 
 class QueryWasExecutedConstraint extends Constraint
@@ -17,7 +18,6 @@ class QueryWasExecutedConstraint extends Constraint
 
     public function __construct($filter, $options = [])
     {
-        parent::__construct();
         $this->filter = $filter;
         $this->options = $options;
     }
@@ -28,7 +28,7 @@ class QueryWasExecutedConstraint extends Constraint
             return false;
         }
 
-        $constraint = \PHPUnit_Framework_Assert::equalTo(new Query($this->filter, $this->options));
+        $constraint = Assert::equalTo(new Query($this->filter, $this->options));
 
         foreach ($other->queries as $query) {
             if ($constraint->evaluate($query, '', true)) {

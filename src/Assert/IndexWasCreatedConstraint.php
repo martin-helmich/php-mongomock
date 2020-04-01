@@ -4,6 +4,7 @@ namespace Helmich\MongoMock\Assert;
 
 use Helmich\MongoMock\Log\Index;
 use Helmich\MongoMock\MockCollection;
+use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\Constraint\Constraint;
 
 class IndexWasCreatedConstraint extends Constraint
@@ -20,7 +21,6 @@ class IndexWasCreatedConstraint extends Constraint
 
     public function __construct($key, $options = [])
     {
-        parent::__construct();
         $this->key = $key;
         $this->options = $options;
     }
@@ -31,7 +31,7 @@ class IndexWasCreatedConstraint extends Constraint
             return false;
         }
 
-        $constraint = \PHPUnit_Framework_Assert::equalTo(new Index($this->key, $this->options));
+        $constraint = Assert::equalTo(new Index($this->key, $this->options));
 
         foreach ($other->indices as $index) {
             if ($constraint->evaluate($index, '', true)) {
