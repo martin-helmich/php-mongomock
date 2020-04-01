@@ -5,13 +5,14 @@ namespace Helmich\MongoMock;
 use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
 
-class TypeMapper {
+class TypeMapper
+{
 
     /** @const array */
     const DEFAULT_TYPE_MAP = [
-        'array' => BSONArray::class,
+        'array'    => BSONArray::class,
         'document' => BSONDocument::class,
-        'root' => BSONDocument::class
+        'root'     => BSONDocument::class,
     ];
 
     /** @var array */
@@ -21,7 +22,7 @@ class TypeMapper {
      * @param array $typeMapDefaultOverwrite
      * @return TypeMapper
      */
-    static function createWithDefault (array $typeMapDefaultOverwrite = []) : TypeMapper
+    static function createWithDefault(array $typeMapDefaultOverwrite = []): TypeMapper
     {
         return new static(array_merge(static::DEFAULT_TYPE_MAP, $typeMapDefaultOverwrite));
     }
@@ -29,7 +30,7 @@ class TypeMapper {
     /**
      * @param array $typeMap
      */
-    function __construct (array $typeMap)
+    function __construct(array $typeMap)
     {
         $this->typeMap = $typeMap;
     }
@@ -40,9 +41,9 @@ class TypeMapper {
      * @param TypeMapper $typeMapper
      * @return TypeMapper
      */
-    function mergeWith(TypeMapper $typeMapper) : TypeMapper
+    function mergeWith(TypeMapper $typeMapper): TypeMapper
     {
-        $instance = clone $this;
+        $instance          = clone $this;
         $instance->typeMap = array_merge($instance->typeMap, $typeMapper->typeMap);
 
         return $instance;
@@ -52,7 +53,7 @@ class TypeMapper {
      * @param BSONDocument $document
      * @return BSONDocument|array
      */
-    function map (BSONDocument $document) : iterable
+    function map(BSONDocument $document): iterable
     {
         /** @var BSONDocument $document */
         $document = $this->typeMapRecursively($document);
@@ -64,7 +65,7 @@ class TypeMapper {
      * @param mixed $document
      * @return mixed
      */
-    private function typeMapRecursively ($document)
+    private function typeMapRecursively($document)
     {
         foreach ($document as $key => &$value) {
             if (is_array($value)) {
@@ -79,7 +80,7 @@ class TypeMapper {
      * @param array $value
      * @return array|object
      */
-    private function typeMapArray (array $value)
+    private function typeMapArray(array $value)
     {
         // If the list is not indexed numerically, it is an associative array
         // Treat associative arrays as documents

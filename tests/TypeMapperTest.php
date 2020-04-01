@@ -3,16 +3,16 @@
 namespace Helmich\MongoMock\Tests;
 
 use Helmich\MongoMock\TypeMapper;
-use MongoDB\BSON\Type;
 use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
 use PHPUnit\Framework\TestCase;
 
 class TypeMapperTest extends TestCase
 {
-    function testMapWithDefaultOptions () {
+    function testMapWithDefaultOptions()
+    {
         $typeMapper = TypeMapper::createWithDefault();
-        $mapped = $typeMapper->map(new BSONDocument(['foo' => 'bar', 'list' => [1, 2, 3]]));
+        $mapped     = $typeMapper->map(new BSONDocument(['foo' => 'bar', 'list' => [1, 2, 3]]));
 
         $this->assertInstanceOf(BSONDocument::class, $mapped);
         $this->assertArrayHasKey('foo', $mapped);
@@ -21,9 +21,10 @@ class TypeMapperTest extends TestCase
         $this->assertCount(3, $mapped['list']);
     }
 
-    function testMapWithDocumentAndArraysAsArrayOption () {
+    function testMapWithDocumentAndArraysAsArrayOption()
+    {
         $typeMapper = TypeMapper::createWithDefault(['document' => 'array', 'array' => 'array']);
-        $mapped = $typeMapper->map(new BSONDocument(['foo' => 'bar', 'list' => [1, 2, 3]]));
+        $mapped     = $typeMapper->map(new BSONDocument(['foo' => 'bar', 'list' => [1, 2, 3]]));
 
         $this->assertArrayHasKey('foo', $mapped);
         $this->assertSame('bar', $mapped['foo']);
@@ -33,9 +34,10 @@ class TypeMapperTest extends TestCase
         $this->assertCount(3, $mapped['list']);
     }
 
-    function testMapWithDocumentAsCustomTypeOption () {
+    function testMapWithDocumentAsCustomTypeOption()
+    {
         $typeMapper = TypeMapper::createWithDefault(['document' => BSONArray::class]);
-        $mapped = $typeMapper->map(new BSONDocument(['foo' => 'bar', 'list' => [1, 2, 3]]));
+        $mapped     = $typeMapper->map(new BSONDocument(['foo' => 'bar', 'list' => [1, 2, 3]]));
 
         $this->assertInstanceOf(BSONArray::class, $mapped);
         $this->assertArrayHasKey('foo', $mapped);
@@ -44,9 +46,10 @@ class TypeMapperTest extends TestCase
         $this->assertCount(3, $mapped['list']);
     }
 
-    function testMapWithSubObjectAsArray () {
+    function testMapWithSubObjectAsArray()
+    {
         $typeMapper = TypeMapper::createWithDefault();
-        $mapped = $typeMapper->map(new BSONDocument(['foo' => ['bar' => 1, 'baz' => 2]]));
+        $mapped     = $typeMapper->map(new BSONDocument(['foo' => ['bar' => 1, 'baz' => 2]]));
 
         $this->assertInstanceOf(BSONDocument::class, $mapped);
         $this->assertArrayHasKey('foo', $mapped);
