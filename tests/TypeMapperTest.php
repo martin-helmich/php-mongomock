@@ -25,10 +25,11 @@ class TypeMapperTest extends TestCase
         $typeMapper = TypeMapper::createWithDefault(['document' => 'array', 'array' => 'array']);
         $mapped = $typeMapper->map(new BSONDocument(['foo' => 'bar', 'list' => [1, 2, 3]]));
 
-        $this->assertIsArray($mapped);
         $this->assertArrayHasKey('foo', $mapped);
         $this->assertSame('bar', $mapped['foo']);
-        $this->assertIsArray($mapped['list']);
+
+        // workaround for missing assertIsArray() in phpunit6 and deprecated assertInternalType in phpunit8
+        $this->assertTrue(is_array($mapped['list']));
         $this->assertCount(3, $mapped['list']);
     }
 
