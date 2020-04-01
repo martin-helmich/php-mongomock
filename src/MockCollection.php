@@ -69,12 +69,8 @@ class MockCollection extends Collection
     /** @var array */
     private $options = [];
 
-    /** @var array */
-    private $typeMap = [
-        'array' => BSONArray::class,
-        'document' => BSONDocument::class,
-        'root' => BSONDocument::class
-    ];
+    /** @var TypeMapper */
+    private $typeMapper;
 
     /**
      * @param string $name
@@ -92,9 +88,7 @@ class MockCollection extends Collection
             $this->options = $options;
         }
 
-        if (isset($this->options['typeMap'])) {
-            $this->typeMap = $this->options['typeMap'];
-        }
+        $this->typeMapper = TypeMapper::createWithDefault($this->options['typeMap'] ?? []);
     }
 
     public function insertOne($document, array $options = [])
@@ -243,10 +237,9 @@ class MockCollection extends Collection
 
     public function find($filter = [], array $options = []): MockCursor
     {
+        $typeMapper = $this->typeMapper;
         if (isset($options['typeMap'])) {
-            $typeMap = array_merge($this->typeMap, $options['typeMap']);
-        } else {
-            $typeMap = $this->typeMap;
+            $typeMapper = $typeMapper->mergeWith(new TypeMapper($options['typeMap']));
         }
 
         // record query for future assertions
@@ -299,7 +292,7 @@ class MockCollection extends Collection
                     $limit--;
                 }
 
-                $cursor[] = $this->typeMap(clone $doc, $typeMap);
+                $cursor[] = $typeMapper->map($doc);
             }
         }
 
@@ -313,31 +306,6 @@ class MockCollection extends Collection
             return $result;
         }
         return null;
-    }
-
-    private function typeMap(BSONDocument $doc, array $typeMap)
-    {
-        $doc = $this->typeMapArray($doc, $typeMap);
-
-        if ($typeMap['document'] === 'array') {
-            $doc = $doc->getArrayCopy();
-        } elseif ($typeMap['document'] !== BSONDocument::class) {
-            $doc = new $typeMap['document']($doc->getArrayCopy());
-        }
-
-        return $doc;
-    }
-
-    private function typeMapArray($doc, array $typeMap)
-    {
-        foreach ($doc as $key => &$value) {
-            if (is_array($value) && $typeMap['array'] !== 'array') {
-                $value = $this->typeMapArray($value, $typeMap);
-                $value = new $typeMap['array']($value);
-            }
-        }
-
-        return $doc;
     }
 
     public function count($filter = [], array $options = [])
