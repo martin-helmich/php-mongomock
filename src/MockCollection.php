@@ -134,12 +134,15 @@ class MockCollection extends Collection
     public function deleteMany($filter, array $options = [])
     {
         $matcher = $this->matcherFromQuery($filter);
+        $count = 0;
         foreach ($this->documents as $i => $doc) {
             if ($matcher($doc)) {
                 unset($this->documents[$i]);
+                $count++;
             }
         }
         $this->documents = array_values($this->documents);
+        return new MockDeleteResult($count, $count);
     }
 
     public function updateOne($filter, $update, array $options = [])

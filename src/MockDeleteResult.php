@@ -1,24 +1,24 @@
 <?php
 namespace Helmich\MongoMock;
 
-use MongoDB\UpdateResult;
+use MongoDB\DeleteResult;
 
-class MockUpdateResult extends UpdateResult
+class MockDeleteResult extends DeleteResult
 {
     private $matched;
     private $modified;
-    private $upsertedIds;
+    private $deletedIds;
 
     /**
      * @param int $matched
      * @param int $modified
-     * @param array $upsertedIds
+     * @param array $deletedIds
      */
-    public function __construct($matched=0, $modified=0, array $upsertedIds=[])
+    public function __construct($matched=0, $modified=0, array $deletedIds=[])
     {
         $this->matched = $matched;
         $this->modified = $modified;
-        $this->upsertedIds = $upsertedIds;
+        $this->deletedIds = $deletedIds;
     }
 
     public function getMatchedCount()
@@ -31,19 +31,18 @@ class MockUpdateResult extends UpdateResult
         return $this->modified;
     }
 
-    public function getUpsertedCount()
+    public function getDeletedCount()
     {
-        return count($this->upsertedIds);
+        return count($this->deletedIds);
     }
 
-    public function getUpsertedId()
+    public function getDeletedIds()
     {
-        return $this->upsertedIds;
+        return $this->deletedIds;
     }
 
     public function isAcknowledged()
     {
         return true;
     }
-
 }
