@@ -1,15 +1,29 @@
 version: "3"
 services:
-  phpunit:
+  php7phpunit:
     build:
       context: .
-      dockerfile: phpunit.DOCKERFILE
-    command: 
+      dockerfile: php7phpunit.DOCKERFILE
+    command:
       - bash
       - -c
       - |
-        composer install
+        composer update
         vendor/bin/phpunit
     working_dir: /work
     volumes:
-      - .:/work
+       - .:/work
+
+  php8phpunit:
+    build:
+      context: .
+      dockerfile: php8phpunit.DOCKERFILE
+    command:
+      - bash
+      - -c
+      - |
+        composer update
+        vendor/bin/phpunit
+    working_dir: /work
+    volumes:
+       - .:/work
