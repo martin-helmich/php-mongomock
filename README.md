@@ -85,7 +85,8 @@ testability:
 To run the tests (anywhere with a running Docker installation):
 
 ```
-$ docker-compose run phpunit
+$ docker-compose run php7phpunit
+$ docker-compose run php8phpunit
 ```
 
 [mongo-collection]: http://php.net/manual/en/class.mongocollection.php
