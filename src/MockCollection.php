@@ -385,7 +385,15 @@ class MockCollection extends Collection
 
     public function distinct($fieldName, $filter = [], array $options = [])
     {
-        // TODO: Implement this function
+        $values = [];
+
+        $matcher = $this->matcherFromQuery($filter);
+        foreach ($this->documents as $document){
+            if ($matcher($document)) {
+                $values[] = $document[$fieldName];
+            }
+        }
+        return array_unique($values);
     }
 
     public function dropIndex($indexName, array $options = [])

@@ -1162,4 +1162,21 @@ class MockCollectionTest extends TestCase
         self::assertInstanceOf(BSONDocument::class, $document);
         self::assertArrayHasKey('foo', $document);
     }
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testDistinct()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 1],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+
+        self::assertThat($this->col->distinct('foo'), self::equalTo(['foo', 'bar', 'baz']));
+        self::assertThat($this->col->distinct('foo', ['bar' => 1]), self::equalTo(['foo', 'bar']));
+        self::assertThat($this->col->distinct('foo', ['bar' => 2]), self::equalTo(['baz']));
+    }
+
 }
