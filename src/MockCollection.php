@@ -389,7 +389,7 @@ class MockCollection extends Collection
 
         $matcher = $this->matcherFromQuery($filter);
         foreach ($this->documents as $document){
-            if ($matcher($document)) {
+            if ($matcher($document) && isset($document[$fieldName])) {
                 $values[] = $document[$fieldName];
             }
         }

@@ -1175,6 +1175,7 @@ class MockCollectionTest extends TestCase
         ]);
 
         self::assertThat($this->col->distinct('foo'), self::equalTo(['foo', 'bar', 'baz']));
+        self::assertThat($this->col->distinct('missing'), self::equalTo([]));
         self::assertThat($this->col->distinct('foo', ['bar' => 1]), self::equalTo(['foo', 'bar']));
         self::assertThat($this->col->distinct('foo', ['bar' => 2]), self::equalTo(['baz']));
     }
