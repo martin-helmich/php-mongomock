@@ -673,6 +673,20 @@ class MockCollection extends Collection
                                 $result = !$operand;
                             }
                             break;
+                        case '$regex':{
+                            if($operand instanceof \MongoDB\BSON\Regex){
+                                $regex = "/". $operand->getPattern() . "/". $operand->getFlags();
+                                $result = preg_match($regex,$val) === 1;
+                            }else if(is_string($operand)){
+                                if(@preg_match($operand, '') === false){
+                                    throw new Exception("Invalid constraint for operator '" . $type . "'");
+                                }
+                                $result = preg_match($operand,$val) === 1;
+                            }else{
+                                throw new Exception("Invalid constraint for operator '" . $type . "'");
+                            }
+                            break;
+                        }
                         // Custom operators
                         case '$instanceOf':
                             $result = is_a($val, $operand);
