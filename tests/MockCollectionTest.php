@@ -281,10 +281,15 @@ class MockCollectionTest extends TestCase
             ['foo' => 'bar', 'bar' => 1],
             ['foo' => 'baz', 'bar' => 2],
         ]);
-        $this->col->deleteOne(['bar' => 1]);
+        
+        $deleteResult = $this->col->deleteOne(['bar' => 1]);
 
         self::assertThat($this->col->count(['bar' => 1]), self::equalTo(1));
         self::assertThat($this->col->count(['bar' => 2]), self::equalTo(1));
+
+        self::assertInstanceOf(\Helmich\MongoMock\MockDeleteResult::class, $deleteResult);
+
+        self::assertEquals(1,$deleteResult->getDeletedCount());
     }
 
     /**
