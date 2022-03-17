@@ -374,13 +374,18 @@ class MockCollection extends Collection
     public function deleteOne($filter, array $options = [])
     {
         $matcher = $this->matcherFromQuery($filter);
+        $count = 0;
+        $deletedIds = [];
         foreach ($this->documents as $i => $doc) {
             if ($matcher($doc)) {
+                $deletedIds []= $doc['_id'];
                 unset($this->documents[$i]);
                 $this->documents = array_values($this->documents);
-                return;
+                $count++;
+                break;
             }
         }
+        return new MockDeleteResult($count, $count, $deletedIds);
     }
 
     public function distinct($fieldName, $filter = [], array $options = [])
