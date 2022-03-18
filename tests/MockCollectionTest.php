@@ -258,9 +258,9 @@ class MockCollectionTest extends TestCase
         $result = $this->col->count(['foo' => ['$regex' => "/(bar|BAZ)/i"]]);
         self::assertThat($result, self::equalTo(3));
 
-        $result = $this->col->count(['foo' => ['$regex' => new \MongoDB\BSON\Regex("FOOBAR","i")]]);
+        $result = $this->col->count(['foo' => ['$regex' => new \MongoDB\BSON\Regex("FOOBAR", "i")]]);
         self::assertThat($result, self::equalTo(1));
-        
+
         $this->expectException(Exception::class);
 
         $result = $this->col->count(['foo' => ['$regex' => "[[[[foobar{"]]);
@@ -311,7 +311,7 @@ class MockCollectionTest extends TestCase
             ['foo' => 'bar', 'bar' => 1],
             ['foo' => 'baz', 'bar' => 2],
         ]);
-        
+
         $deleteResult = $this->col->deleteOne(['bar' => 1]);
 
         self::assertThat($this->col->count(['bar' => 1]), self::equalTo(1));
@@ -319,7 +319,7 @@ class MockCollectionTest extends TestCase
 
         self::assertInstanceOf(\Helmich\MongoMock\MockDeleteResult::class, $deleteResult);
 
-        self::assertEquals(1,$deleteResult->getDeletedCount());
+        self::assertEquals(1, $deleteResult->getDeletedCount());
     }
 
     /**

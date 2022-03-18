@@ -10,10 +10,9 @@ use MongoDB\BSON\Binary;
 use MongoDB\BSON\ObjectID;
 use MongoDB\BSON\Regex;
 use MongoDB\Collection;
-use MongoDB\Model\BSONArray;
+use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Model\BSONDocument;
 use MongoDB\Model\IndexInfoIteratorIterator;
-use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Operation\FindOneAndUpdate;
 use PHPUnit\Framework\Constraint\Constraint;
 
@@ -378,7 +377,7 @@ class MockCollection extends Collection
         $deletedIds = [];
         foreach ($this->documents as $i => $doc) {
             if ($matcher($doc)) {
-                $deletedIds []= $doc['_id'];
+                $deletedIds [] = $doc['_id'];
                 unset($this->documents[$i]);
                 $this->documents = array_values($this->documents);
                 $count++;
@@ -393,7 +392,7 @@ class MockCollection extends Collection
         $values = [];
 
         $matcher = $this->matcherFromQuery($filter);
-        foreach ($this->documents as $document){
+        foreach ($this->documents as $document) {
             if ($matcher($document) && isset($document[$fieldName])) {
                 $values[] = $document[$fieldName];
             }
@@ -678,20 +677,19 @@ class MockCollection extends Collection
                                 $result = !$operand;
                             }
                             break;
-                        case '$regex':{
-                            if($operand instanceof \MongoDB\BSON\Regex){
-                                $regex = "/". $operand->getPattern() . "/". $operand->getFlags();
-                                $result = preg_match($regex,$val) === 1;
-                            }else if(is_string($operand)){
-                                if(@preg_match($operand, '') === false){
+                        case '$regex':
+                            if ($operand instanceof Regex) {
+                                $regex = "/" . $operand->getPattern() . "/" . $operand->getFlags();
+                                $result = preg_match($regex, $val) === 1;
+                            } else if (is_string($operand)) {
+                                if (@preg_match($operand, '') === false) {
                                     throw new Exception("Invalid constraint for operator '" . $type . "'");
                                 }
-                                $result = preg_match($operand,$val) === 1;
-                            }else{
+                                $result = preg_match($operand, $val) === 1;
+                            } else {
                                 throw new Exception("Invalid constraint for operator '" . $type . "'");
                             }
                             break;
-                        }
                         // Custom operators
                         case '$instanceOf':
                             $result = is_a($val, $operand);
