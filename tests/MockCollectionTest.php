@@ -4,6 +4,7 @@ namespace Helmich\MongoMock\Tests;
 
 use Helmich\MongoMock\MockCollection;
 use Helmich\MongoMock\MockCursor;
+use Helmich\MongoMock\Exception;
 use MongoDB\BSON\ObjectID;
 use MongoDB\BSON\Regex;
 use MongoDB\Collection;
@@ -184,6 +185,9 @@ class MockCollectionTest extends TestCase
         $result = $find->toArray();
         self::assertThat(count($result), self::equalTo(1));
         self::assertThat($result[0]['foo'], self::equalTo('bar'));
+
+        $result = $this->col->count(['foo' => ['$not' => ['$regex' => "/bar/"]]]);
+        self::assertThat($result, self::equalTo(1));
     }
 
     /**
@@ -235,6 +239,32 @@ class MockCollectionTest extends TestCase
         $find = $this->col->findOne(['_id' => $id]);
         self::assertThat($find, self::isInstanceOf(BSONDocument::class));
         self::assertThat($find['foo'], self::equalTo('bar'));
+    }
+
+    public function testFindWithRegexFilter()
+    {
+        $this->col->insertMany([
+            ['foo' => 'barbazbad'],
+            ['foo' => 'bazbad'],
+            ['foo' => 'foobarbaroof']
+        ]);
+
+        $result = $this->col->count(['foo' => ['$regex' => "/barBar/"]]);
+        self::assertThat($result, self::equalTo(0));
+
+        $result = $this->col->count(['foo' => ['$regex' => "/bar/"]]);
+        self::assertThat($result, self::equalTo(2));
+
+        $result = $this->col->count(['foo' => ['$regex' => "/(bar|BAZ)/i"]]);
+        self::assertThat($result, self::equalTo(3));
+
+        $result = $this->col->count(['foo' => ['$regex' => new \MongoDB\BSON\Regex("FOOBAR","i")]]);
+        self::assertThat($result, self::equalTo(1));
+        
+        $this->expectException(Exception::class);
+
+        $result = $this->col->count(['foo' => ['$regex' => "[[[[foobar{"]]);
+
     }
 
     public function testInsertManyInsertsDocuments()
