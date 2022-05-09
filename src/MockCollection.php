@@ -613,13 +613,18 @@ class MockCollection extends Collection
 
         if (is_array($constraint)) {
             return $match = function ($val) use (&$constraint, &$match): bool {
-                //cast $val to array if its an instance of BSONArray
-                //this will prevent is_array from failing
+                //cast $val to array if it is an instance of BSONArray
+                //this will prevent is_array,array_reduce... from failing
                 if($val instanceof BSONArray){
                     $val = (array)$val;
                 }
                 $result = true;
                 foreach ($constraint as $type => $operand) {
+                    //cast $operand to array if it is an instance of BSONArray
+                    //this will prevent is_array,array_reduce... from failing
+                    if($operand instanceof BSONArray){
+                        $operand = (array)$operand;
+                    }
                     switch ($type) {
                         // Mongo operators (subset)
                         case '$gt':
