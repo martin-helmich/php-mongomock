@@ -12,6 +12,7 @@ use MongoDB\BSON\Regex;
 use MongoDB\Collection;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Model\BSONDocument;
+use MongoDB\Model\BSONArray;
 use MongoDB\Model\IndexInfoIteratorIterator;
 use MongoDB\Operation\FindOneAndUpdate;
 use PHPUnit\Framework\Constraint\Constraint;
