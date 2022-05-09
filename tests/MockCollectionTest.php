@@ -733,6 +733,37 @@ class MockCollectionTest extends TestCase
     /**
      * @depends testInsertManyInsertsDocuments
      */
+    public function testFindWorksWithExistsParameterized()
+    {
+        $this->col->insertMany([
+            ['foo' => 'foo', 'bar' => 3, 'krypton' => true],
+            ['foo' => 'bar', 'bar' => 1],
+            ['foo' => 'baz', 'bar' => 2],
+        ]);
+        $result = $this->col->find([
+            'foobar' => ['$exists' => false],
+        ]);
+        $result = iterator_to_array($result);
+        self::assertThat(count($result), self::equalTo(3));
+
+        $result = $this->col->find([
+            'krypton' => ['$exists' => true],
+        ]);
+        $result = iterator_to_array($result);
+        self::assertThat(count($result), self::equalTo(1));
+        self::assertThat($result[0]['foo'], self::equalTo('foo'));
+
+        $result = $this->col->find([
+            'inexistant' => ['$exists' => true],
+        ]);
+        $result = iterator_to_array($result);
+        self::assertThat(count($result), self::equalTo(0));
+    }
+
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
     public function testFindOneFindsOne()
     {
         $this->col->insertMany([

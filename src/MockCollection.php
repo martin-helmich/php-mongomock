@@ -613,11 +613,6 @@ class MockCollection extends Collection
 
         if (is_array($constraint)) {
             return $match = function ($val) use (&$constraint, &$match): bool {
-                //cast $val to array if its an instance of BSONArray
-                //this will prevent is_array from failing
-                if($val instanceof BSONArray){
-                    $val = (array)$val;
-                }
                 $result = true;
                 foreach ($constraint as $type => $operand) {
                     switch ($type) {
@@ -666,7 +661,8 @@ class MockCollection extends Collection
                             }
                             break;
                         case '$exists':
-                            $result = $val !== null;
+                            // note that for inexistant fields, val is overridden to be null
+                            return $operand ? $val !== null : $val === null;
                             break;
                         case '$size':
                             $result = count($val) === $operand;
