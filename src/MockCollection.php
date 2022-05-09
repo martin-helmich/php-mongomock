@@ -613,11 +613,6 @@ class MockCollection extends Collection
 
         if (is_array($constraint)) {
             return $match = function ($val) use (&$constraint, &$match): bool {
-                //cast $val to array if its an instance of BSONArray
-                //this will prevent is_array from failing
-                if($val instanceof BSONArray){
-                    $val = (array)$val;
-                }
                 $result = true;
                 foreach ($constraint as $type => $operand) {
                     switch ($type) {
@@ -641,12 +636,26 @@ class MockCollection extends Collection
                             $result = ($val != $operand);
                             break;
                         case '$in':
+                            $matchInArray = function($val, $operand){                                    
+                                return array_reduce($operand,function($ac,$op) use($val){
+                                    if($op instanceof \MongoDB\BSON\Regex){
+                                        $regex = "/". $op->getPattern() . "/". $op->getFlags();
+                                        return ($ac || preg_match($regex,$val) === 1);
+                                    }else if(is_string($op)){
+                                        if(@preg_match($op, '') === false){
+                                            return ($ac || $op === $val);
+                                        }
+                                        return ($ac || preg_match($op,$val) === 1);
+                                    }
+                                    return ($ac || $op === $val);
+                                },false);
+                            };
                             $result = (!is_array($val))
-                                ? in_array($val, $operand)
+                                ? $matchInArray($val,$operand)
                                 : array_reduce(
-                                    $operand,
-                                    function ($acc, $op) use ($val) {
-                                        return ($acc || in_array($op, $val));
+                                    $val,
+                                    function ($acc, $fval) use ($operand,$matchInArray) {
+                                        return ($acc || $matchInArray($fval, $operand));
                                     },
                                     false
                                 );

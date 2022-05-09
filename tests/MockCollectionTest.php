@@ -217,6 +217,43 @@ class MockCollectionTest extends TestCase
     /**
      * @depends testInsertOneInsertsDocument
      */
+    public function testFindWithInAndRegexFilter()
+    {
+        $this->col->insertMany([
+            ['foo' => ['bar', 'baz', 'bad']],
+            ['foo' => ['baz', 'bad']],
+            ['foo' => ['foobar', 'baroof']],
+            ['foo' => 'BazBarBaz'],
+            ['foo' => 'boof'],
+        ]);
+
+        /**
+         * To include a regular expression in an $in query expression,
+         * you can only use JavaScript regular expression objects (i.e. /pattern/ ).
+         * source: https://www.mongodb.com/docs/manual/reference/operator/query/regex/#-in-expressions
+         */
+        $result = $this->col->count(['foo' => ['$in' => ["/barBar/","/barBor/"]]]);
+        self::assertThat($result, self::equalTo(0));
+
+        $result = $this->col->count(['foo' => ['$in' => ["/bar$/","/^Bar/i",]]]);
+        self::assertThat($result, self::equalTo(2));
+
+        $result = $this->col->count(['foo' => ['$in' => ['/^Bar$/i',]]]);
+        self::assertThat($result, self::equalTo(1));
+
+        $result = $this->col->count(['foo' => ['$in' => ['/OO(B|f)/i',]]]);
+        self::assertThat($result, self::equalTo(2));
+
+        $result = $this->col->count(['foo' => ['$in' => [new \MongoDB\BSON\Regex("FOOBAR|bad", "i")]]]);
+        self::assertThat($result, self::equalTo(3));
+
+        $result = $this->col->count(['foo' => ['$in' => [new \MongoDB\BSON\Regex("ob"),new \MongoDB\BSON\Regex("oof")]]]);
+        self::assertThat($result, self::equalTo(2));
+    }
+
+    /**
+     * @depends testInsertOneInsertsDocument
+     */
     public function testInsertOneKeepsBSONObjects()
     {
         $result = $this->col->insertOne(new BSONDocument(['foo' => 'bar']));
