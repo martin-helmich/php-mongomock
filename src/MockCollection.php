@@ -613,11 +613,6 @@ class MockCollection extends Collection
 
         if (is_array($constraint)) {
             return $match = function ($val) use (&$constraint, &$match): bool {
-                //cast $val to array if its an instance of BSONArray
-                //this will prevent is_array from failing
-                if($val instanceof BSONArray){
-                    $val = (array)$val;
-                }
                 $result = true;
                 foreach ($constraint as $type => $operand) {
                     switch ($type) {
@@ -693,6 +688,20 @@ class MockCollection extends Collection
                                 $result = preg_match($operand, $val) === 1;
                             } else {
                                 throw new Exception("Invalid constraint for operator '" . $type . "'");
+                            }
+                            break;
+                        case '$all':
+                            $result = false;
+                            if(is_array($val)){
+                                if(count($operand) == 1 && is_array($operand[0])){
+                                    $result = count($val) == count($operand[0]) && array_reduce($operand[0],
+                                    function($acc,$op) use($val){
+                                        return $acc && in_array($op,$val,true);
+                                    },true);
+                                }
+                                $result = $result || array_reduce($operand,function($acc,$op) use($val){
+                                    return $acc && in_array($op,$val,true);
+                                },true);
                             }
                             break;
                         // Custom operators
