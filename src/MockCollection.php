@@ -643,11 +643,11 @@ class MockCollection extends Collection
                                         return ($ac || preg_match($regex,$val) === 1);
                                     }else if(is_string($op)){
                                         if(@preg_match($op, '') === false){
-                                            return ($ac || $op === $val);
+                                            return ($ac || $op == $val);
                                         }
                                         return ($ac || preg_match($op,$val) === 1);
                                     }
-                                    return ($ac || $op === $val);
+                                    return ($ac || $op == $val);
                                 },false);
                             };
                             $result = (!is_array($val))
