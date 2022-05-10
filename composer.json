@@ -1,5 +1,5 @@
 {
-  "name": "kevinkl3/mongomock",
+  "name": "helmich/mongomock",
   "description": "Library containing highly intelligent MongoDB mocks for unit testing",
   "type": "library",
   "license": "MIT",

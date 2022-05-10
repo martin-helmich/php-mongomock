@@ -55,7 +55,7 @@ class MockDatabase extends Database
      * List collections
      *
      * @param  array $options
-     * @return CollectionInfoLegacyIterator
+     * @return CollectionInfoLegacyIterator|CollectionInfoIterator
      */
     public function listCollections(array $options = [])
     {
@@ -66,7 +66,9 @@ class MockDatabase extends Database
                 'options' => $collection['options']
             ];
         }
-
+        if(!class_exists("MongoDB\\Model\\CollectionInfoLegacyIterator")){
+            return new MockCollectionInfoIterator(new ArrayIterator($collections));
+        }
         return new CollectionInfoLegacyIterator(new ArrayIterator($collections));
     }
 
