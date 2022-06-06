@@ -482,7 +482,11 @@ class MockCollection extends Collection
 
     public function replaceOne($filter, $replacement, array $options = [])
     {
-        // TODO: Implement this function
+        $shouldReplace = $this->findOne($filter) || ($options['upsert'] ?? false);
+        if ($shouldReplace) {
+            $this->deleteOne($filter);
+            $this->insertOne($replacement);
+        }
     }
 
     public function withOptions(array $options = [])
