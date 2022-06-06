@@ -685,7 +685,8 @@ class MockCollection extends Collection
                             }
                             break;
                         case '$exists':
-                            $result = $val !== null;
+                            // note that for inexistant fields, val is overridden to be null
+                            return $operand ? $val !== null : $val === null;
                             break;
                         case '$size':
                             $result = count($val) === $operand;
