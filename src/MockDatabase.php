@@ -66,9 +66,11 @@ class MockDatabase extends Database
                 'options' => $collection['options']
             ];
         }
-        if(!class_exists("MongoDB\\Model\\CollectionInfoLegacyIterator")){
+
+        if (!class_exists(CollectionInfoLegacyIterator::class)) {
             return new MockCollectionInfoIterator(new ArrayIterator($collections));
         }
+
         return new CollectionInfoLegacyIterator(new ArrayIterator($collections));
     }
 
