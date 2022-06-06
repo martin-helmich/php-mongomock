@@ -217,6 +217,77 @@ class MockCollectionTest extends TestCase
     /**
      * @depends testInsertOneInsertsDocument
      */
+    public function testFindWithAllFilter()
+    {
+        $this->col->insertMany([
+            ['foo' => ['bar', 'baz', 'bad']],
+            ['foo' => ['baz', 'bad']],
+            ['foo' => ['foobar', 'baroof']],
+            ['foo' => [1,2,3], 'bar' => [4,5,6]],
+            ['foo' => [99.99,'bar',10], 'bar' => [false,true]],
+        ]);
+
+        $result = $this->col->count(['foo' => ['$all' => ['bar','baz','foobar','zar']]]);
+        self::assertThat($result, self::equalTo(0));
+
+        $result = $this->col->count(['foo' => ['$all' => ['bar','baz','bad']]]);
+        self::assertThat($result, self::equalTo(1));
+
+        $result = $this->col->count(['foo' => ['$all' => ['foobar', 'baroof']]]);
+        self::assertThat($result, self::equalTo(1));
+        //The $all is equivalent to an $and operation of the specified values;
+        $andResult = $this->col->count(['$and' => [['foo'=>'foobar'],['foo' => 'baroof']]]);
+        self::assertThat($andResult, self::equalTo($result));
+
+        $result = $this->col->count(['foo' => ['$all' => ['baz']]]);
+        self::assertThat($result, self::equalTo(2));
+
+        $result = $this->col->count(['foo' => ['$all' => [3,1,2]], 'bar' => ['$all' => [6,4]] ]);
+        self::assertThat($result, self::equalTo(1));
+
+        $result = $this->col->count(['foo' => ['$all' => [10,99.99000]], 'bar' => ['$all' => [true]] ]);
+        self::assertThat($result, self::equalTo(1));
+
+        $result = $this->col->count(['foo' => ['$all' => [99.99000,'baz']], 'bar' => ['$all' => ['']] ]);
+        self::assertThat($result, self::equalTo(0));
+    }
+
+    /**
+     * @depends testInsertOneInsertsDocument
+     */
+    public function testFindWithAllFilterNestedArrays()
+    {
+        /**
+         * When passed an array of a nested array (e.g. [ [ "A" ] ] ), 
+         * $all matches documents where the field contains the nested 
+         * array as an element (e.g. field: [ [ "A" ], ... ]),
+         * or the field equals the nested array (e.g. field: [ "A" ]).
+        */
+        $this->col->insertMany([
+            ['foo' => ['bar', 'baz', ['bad']]],
+            ['foo' => ['bad']],
+            ['foo' => ['foobar', 'baroof']],
+            ['foo' => [1,2,3], 'bar' => [4,5,6]],
+            ['foo' => [99.99,'bar',10], 'bar' => [false,true]],
+            ['foo' => [], 'bar' => []],
+        ]);
+
+        $result = $this->col->count(['foo' => ['$all' => ['bar','baz',['bad']]]]);
+        self::assertThat($result, self::equalTo(1));
+
+        $result = $this->col->count(['foo' => ['$all' => [['bad']] ]]);
+        self::assertThat($result, self::equalTo(2));
+
+        $result = $this->col->count(['foo' => ['$all' => [['foobar', 'baroof']] ]]);
+        self::assertThat($result, self::equalTo(1));
+
+        $result = $this->col->count(['foo' => ['$all' => [['foobar', 'baroof'],'bar'] ]]);
+        self::assertThat($result, self::equalTo(0));
+
+        $result = $this->col->count(['foo' => ['$all' => []],'bar' => ['$all'=>[[]]]]);
+        self::assertThat($result, self::equalTo(1));
+    }
+
     public function testFindWithInAndRegexFilter()
     {
         $this->col->insertMany([

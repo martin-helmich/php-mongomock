@@ -715,7 +715,24 @@ class MockCollection extends Collection
                                 throw new Exception("Invalid constraint for operator '" . $type . "'");
                             }
                             break;
-                        // Custom operators
+                        case '$all':
+                            $result = false;
+                            if (is_array($val)) {
+                                if (count($operand) == 1 && is_array($operand[0])) {
+                                    $result = count($val) == count($operand[0]) && array_reduce(
+                                        $operand[0],
+                                        function ($acc, $op) use ($val) {
+                                            return $acc && in_array($op, $val, true);
+                                        },
+                                        true
+                                    );
+                                }
+                                $result = $result || array_reduce($operand, function ($acc, $op) use ($val) {
+                                    return $acc && in_array($op, $val, true);
+                                }, true);
+                            }
+                            break;
+                            // Custom operators
                         case '$instanceOf':
                             $result = is_a($val, $operand);
                             break;
