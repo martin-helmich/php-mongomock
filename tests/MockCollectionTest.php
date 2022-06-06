@@ -232,10 +232,10 @@ class MockCollectionTest extends TestCase
          * you can only use JavaScript regular expression objects (i.e. /pattern/ ).
          * source: https://www.mongodb.com/docs/manual/reference/operator/query/regex/#-in-expressions
          */
-        $result = $this->col->count(['foo' => ['$in' => ["/barBar/","/barBor/"]]]);
+        $result = $this->col->count(['foo' => ['$in' => ["/barBar/", "/barBor/"]]]);
         self::assertThat($result, self::equalTo(0));
 
-        $result = $this->col->count(['foo' => ['$in' => ["/bar$/","/^Bar/i",]]]);
+        $result = $this->col->count(['foo' => ['$in' => ["/bar$/", "/^Bar/i",]]]);
         self::assertThat($result, self::equalTo(2));
 
         $result = $this->col->count(['foo' => ['$in' => ['/^Bar$/i',]]]);
@@ -247,7 +247,7 @@ class MockCollectionTest extends TestCase
         $result = $this->col->count(['foo' => ['$in' => [new \MongoDB\BSON\Regex("FOOBAR|bad", "i")]]]);
         self::assertThat($result, self::equalTo(3));
 
-        $result = $this->col->count(['foo' => ['$in' => [new \MongoDB\BSON\Regex("ob"),new \MongoDB\BSON\Regex("oof")]]]);
+        $result = $this->col->count(['foo' => ['$in' => [new \MongoDB\BSON\Regex("ob"), new \MongoDB\BSON\Regex("oof")]]]);
         self::assertThat($result, self::equalTo(2));
     }
 
