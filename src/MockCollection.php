@@ -12,6 +12,7 @@ use MongoDB\BSON\Regex;
 use MongoDB\Collection;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Model\BSONDocument;
+use MongoDB\Model\BSONArray;
 use MongoDB\Model\IndexInfoIteratorIterator;
 use MongoDB\Operation\FindOneAndUpdate;
 use PHPUnit\Framework\Constraint\Constraint;
@@ -234,7 +235,6 @@ class MockCollection extends Collection
                 $doc[$k][] = $v;
             }
         }
-
     }
 
     public function find($filter = [], array $options = []): MockCursor
@@ -377,7 +377,7 @@ class MockCollection extends Collection
         $deletedIds = [];
         foreach ($this->documents as $i => $doc) {
             if ($matcher($doc)) {
-                $deletedIds [] = $doc['_id'];
+                $deletedIds[] = $doc['_id'];
                 unset($this->documents[$i]);
                 $this->documents = array_values($this->documents);
                 $count++;
@@ -613,8 +613,18 @@ class MockCollection extends Collection
 
         if (is_array($constraint)) {
             return $match = function ($val) use (&$constraint, &$match): bool {
+                //cast $val to array if it is an instance of BSONArray
+                //this will prevent is_array,array_reduce... from failing
+                if ($val instanceof BSONArray) {
+                    $val = (array)$val;
+                }
                 $result = true;
                 foreach ($constraint as $type => $operand) {
+                    //cast $operand to array if it is an instance of BSONArray
+                    //this will prevent is_array,array_reduce... from failing
+                    if ($operand instanceof BSONArray) {
+                        $operand = (array)$operand;
+                    }
                     switch ($type) {
                         // Mongo operators (subset)
                         case '$gt':
@@ -636,12 +646,26 @@ class MockCollection extends Collection
                             $result = ($val != $operand);
                             break;
                         case '$in':
+                            $matchInArray = function ($val, $operand) {
+                                return array_reduce($operand, function ($ac, $op) use ($val) {
+                                    if ($op instanceof \MongoDB\BSON\Regex) {
+                                        $regex = "/" . $op->getPattern() . "/" . $op->getFlags();
+                                        return ($ac || preg_match($regex, $val) === 1);
+                                    } else if (is_string($op)) {
+                                        if (@preg_match($op, '') === false) {
+                                            return ($ac || $op == $val);
+                                        }
+                                        return ($ac || preg_match($op, $val) === 1);
+                                    }
+                                    return ($ac || $op == $val);
+                                }, false);
+                            };
                             $result = (!is_array($val))
-                                ? in_array($val, $operand)
+                                ? $matchInArray($val, $operand)
                                 : array_reduce(
-                                    $operand,
-                                    function ($acc, $op) use ($val) {
-                                        return ($acc || in_array($op, $val));
+                                    $val,
+                                    function ($acc, $fval) use ($operand, $matchInArray) {
+                                        return ($acc || $matchInArray($fval, $operand));
                                     },
                                     false
                                 );
@@ -661,7 +685,8 @@ class MockCollection extends Collection
                             }
                             break;
                         case '$exists':
-                            $result = $val !== null;
+                            // note that for inexistant fields, val is overridden to be null
+                            return $operand ? $val !== null : $val === null;
                             break;
                         case '$size':
                             $result = count($val) === $operand;
