@@ -235,7 +235,6 @@ class MockCollection extends Collection
                 $doc[$k][] = $v;
             }
         }
-
     }
 
     public function find($filter = [], array $options = []): MockCursor
@@ -378,7 +377,7 @@ class MockCollection extends Collection
         $deletedIds = [];
         foreach ($this->documents as $i => $doc) {
             if ($matcher($doc)) {
-                $deletedIds [] = $doc['_id'];
+                $deletedIds[] = $doc['_id'];
                 unset($this->documents[$i]);
                 $this->documents = array_values($this->documents);
                 $count++;
@@ -616,14 +615,14 @@ class MockCollection extends Collection
             return $match = function ($val) use (&$constraint, &$match): bool {
                 //cast $val to array if it is an instance of BSONArray
                 //this will prevent is_array,array_reduce... from failing
-                if($val instanceof BSONArray){
+                if ($val instanceof BSONArray) {
                     $val = (array)$val;
                 }
                 $result = true;
                 foreach ($constraint as $type => $operand) {
                     //cast $operand to array if it is an instance of BSONArray
                     //this will prevent is_array,array_reduce... from failing
-                    if($operand instanceof BSONArray){
+                    if ($operand instanceof BSONArray) {
                         $operand = (array)$operand;
                     }
                     switch ($type) {
