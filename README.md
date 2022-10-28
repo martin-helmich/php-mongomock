@@ -50,7 +50,7 @@ use Helmich\MongoMock\MockCollection;
 $collection = new MockCollection();
 $collection->createIndex(['foo' => 1]);
 
-$documentId = $collection->insertOne(['foo' => 'bar'])->insertedId();
+$documentId = $collection->insertOne(['foo' => 'bar'])->getInsertedId();
 $collection->updateOne(['_id' => $documentId], ['$set' => ['foo' => 'baz']]);
 ```
 
