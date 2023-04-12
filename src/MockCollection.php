@@ -182,8 +182,18 @@ class MockCollection extends Collection
     {
         if (array_key_exists('upsert', $options)) {
             if ($options['upsert'] && !$anyUpdates) {
-                if (array_key_exists('$set', $update)) {
-                    $documents = [array_merge($filter, $update['$set'])];
+                $set = $update['$set'] ?? [];
+                $setOnInsert = $update['$setOnInsert'] ?? [];
+                $commonFields = array_intersect_key($set, $setOnInsert);
+
+                //Emulate Mongo behaviour
+                //@link https://stackoverflow.com/questions/23992723/findandmodify-fails-with-error-cannot-update-field1-and-field1-at-the-same/23994425#23994425
+                if(!empty($commonFields)){
+                    throw new Exception('Operators $setOnInsert and $set cannot have the same field(s): '.
+                        implode(', ', array_keys($commonFields)));
+                }
+                if (!empty($set) || !empty($setOnInsert)) {
+                    $documents = [array_merge($filter, $set, $setOnInsert)];
                 } else {
                     $documents = [$update];
                 }
@@ -196,25 +206,27 @@ class MockCollection extends Collection
     {
         // The update operators are required, as exemplified here:
         // http://mongodb.github.io/mongo-php-library/tutorial/crud/
-        $supported = ['$set', '$unset', '$inc', '$push'];
+        $supported = ['$set', '$unset', '$inc', '$push', '$setOnInsert'];
         $unsupported = array_diff(array_keys($update), $supported);
         if (count($unsupported) > 0) {
             throw new Exception("Unsupported update operators found: " . implode(', ', $unsupported));
         }
 
-        foreach ($update['$set'] ?? [] as $k => $v) {
-            $dot = strpos($k, ".");
-            if ($dot !== false) {
-                $tmp = &$doc;
-                $keys = explode(".", $k);
-                if ($keys !== null) {
-                    foreach ($keys as $key) {
-                        $tmp = &$tmp[$key];
+        foreach(['$set', '$setOnInsert'] as $operator){
+            foreach ($update[$operator] ?? [] as $k => $v) {
+                $dot = strpos($k, ".");
+                if ($dot !== false) {
+                    $tmp = &$doc;
+                    $keys = explode(".", $k);
+                    if ($keys !== null) {
+                        foreach ($keys as $key) {
+                            $tmp = &$tmp[$key];
+                        }
+                        $tmp = $v;
                     }
-                    $tmp = $v;
+                } else {
+                    $doc[$k] = $v;
                 }
-            } else {
-                $doc[$k] = $v;
             }
         }
 
@@ -225,7 +237,11 @@ class MockCollection extends Collection
         }
 
         foreach ($update['$inc'] ?? [] as $k => $v) {
-            if (isset($doc[$k]) && is_integer($v) && is_integer($doc[$k])) {
+            //Mongo behaviour: it increments even a non-existing field
+            if(!isset($doc[$k])){
+                $doc[$k] = 0;
+            }
+            if (is_integer($v) && is_integer($doc[$k])) {
                 $doc[$k] += $v;
             }
         }

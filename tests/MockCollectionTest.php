@@ -570,13 +570,13 @@ class MockCollectionTest extends TestCase
 
         $this->col->updateOne(['bar' => 4], $x3, ['upsert' => true]);
         self::assertThat($this->col->count(['bar' => 1, 'foo' => 'Kekse']), self::equalTo(1));
-        if (array_key_exists('$set', $x3)) {
+        if (isset($x3['$set']) || isset($x3['$setOnInsert'])) {
             self::assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), self::equalTo(1));
         } else {
             self::assertThat($this->col->count(['bar' => 1, 'foo' => 'bar']), self::equalTo(2));
         }
         self::assertThat($this->col->count(['bar' => 2]), self::equalTo(1));
-        if (array_key_exists('$set', $x3)) {
+        if (isset($x3['$set']) || isset($x3['$setOnInsert'])) {
             self::assertThat($this->col->count(['bar' => 4]), self::equalTo(1));
         } else {
             self::assertThat($this->col->count(['bar' => 4]), self::equalTo(0));
@@ -599,6 +599,32 @@ class MockCollectionTest extends TestCase
     /**
      * @depends testInsertManyInsertsDocuments
      */
+    public function testUpdateUpsertCanSetOnInsert()
+    {
+        $this->updateUpsertCore(
+            ['$setOnInsert' => ['foo' => 'Kekse']],
+            ['$setOnInsert' => ['foo' => 'Kekse']],
+            ['$setOnInsert' => ['foo' => 'bar']]
+        );
+    }
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
+    public function testUpdateUpsertException()
+    {
+        $this->expectException(Exception::class);
+        $this->updateUpsertCore(
+            ['$setOnInsert' => ['foo' => 'Kekse' ], '$set' => ['foo' => 'Kekse_']],
+            ['$setOnInsert' => ['foo' => 'Kekse' ], '$set' => ['foo' => 'Kekse_']],
+            ['$setOnInsert' => ['foo' => 'bar' ], '$set' => ['foo' => 'bar_']]
+        );
+    }
+
+
+    /**
+     * @depends testInsertManyInsertsDocuments
+     */
     public function testUpdateIncrement()
     {
         $this->col->insertOne(
@@ -607,6 +633,9 @@ class MockCollectionTest extends TestCase
 
         $this->col->updateMany([], ['$inc' => ['bar' => 1]], ['upsert' => true]);
         self::assertThat($this->col->count(['bar' => 1]), self::equalTo(1));
+
+        $this->col->updateMany([], ['$inc' => ['none' => 1]], ['upsert' => true]);
+        self::assertThat($this->col->count(['none' => 1]), self::equalTo(1));
 
         $this->col->insertOne(
             ['foo' => 'foo', 'bar' => 1]
